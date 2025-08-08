@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Masters - The Ultimate Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="background-overlay"></div>
+    <div id="contentWrapper">
+        <h1 id="gameTitle">Ping Pong Masters</h1>
+        <div id="gameContainer">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <!-- Charge Bars -->
+            <div id="p1ChargeBarContainer" class="charge-bar-container">
+                <div class="charge-bar-outer">
+                    <div class="charge-bar-inner" id="p1ChargeBar"></div>
+                </div>
+            </div>
+            <div id="p2ChargeBarContainer" class="charge-bar-container">
+                <div class="charge-bar-outer">
+                    <div class="charge-bar-inner" id="p2ChargeBar"></div>
+                </div>
+            </div>
+
+            <!-- Game UI -->
+            <div id="scoreDisplay">0 - 0</div>
+            <div id="objectiveDisplay"></div>
+            <div id="rallyDisplay">0</div>
+            
+            <!-- Special Shot Text -->
+            <div id="powerShotText">POWER SHOT!</div>
+            <div id="curveShotText">CURVE SHOT!</div>
+            <div id="powerCurveShotText">POWER CURVE!</div>
+            <div id="draftText">DRAFT!</div>
+
+            <!-- In-Game Controls -->
+            <div id="inGameControls">
+                <button id="inGamePauseButton">⏸</button>
+                <button id="inGameExitButton">✕</button>
+            </div>
+
+            <!-- Performance Displays -->
+            <div id="fpsDisplay">FPS: 60</div>
+            <div id="speedDisplay">Speed: 0 km/h</div>
+
+            <!-- Countdown -->
+            <div id="countdownText">3</div>
+
+            <!-- Mobile Controls -->
+            <div class="mobile-controls-container p1">
+                <div class="move-controls">
+                    <button id="p1UpBtn">↑</button>
+                    <button id="p1DownBtn">↓</button>
+                </div>
+                <div class="special-controls">
+                    <button id="p1PowerBtn">P</button>
+                    <button id="p1CurveBtn">C</button>
+                </div>
+            </div>
+            <div class="mobile-controls-container p2">
+                <div class="move-controls">
+                    <button id="p2UpBtn">↑</button>
+                    <button id="p2DownBtn">↓</button>
+                </div>
+                <div class="special-controls">
+                    <button id="p2PowerBtn">P</button>
+                    <button id="p2CurveBtn">C</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Home Screen -->
+        <div id="homeScreen" class="home-screen">
+            <div class="mode-selection-cards">
+                <div class="card" data-mode="vs-ai">
+                    <h3>VS AI</h3>
+                    <p>Challenge the computer</p>
+                    <div class="highscore-display">High Score: <span id="vsAiHighScore">0</span></div>
+                </div>
+                <div class="card" data-mode="training">
+                    <h3>Training</h3>
+                    <p>Practice your skills</p>
+                    <div class="highscore-display">High Score: <span id="trainingHighScore">0</span></div>
+                </div>
+                <div class="card" data-mode="2-player">
+                    <h3>2 Player</h3>
+                    <p>Local multiplayer</p>
+                    <div class="highscore-display">High Score: <span id="mpHighScore">0</span></div>
+                </div>
+            </div>
+
+            <div id="homeInstructionText">
+                <p>Select a game mode to begin your ping pong adventure!</p>
+                <p>Use <strong>W/S</strong> and <strong>↑/↓</strong> to move paddles</p>
+                <p>Hold <strong>SPACE</strong> to charge special shots</p>
+            </div>
+
+            <!-- Mode Options -->
+            <div class="mode-options-container">
+                <!-- AI Difficulty Selection -->
+                <div id="aiDifficultySelection" class="hidden">
+                    <h3>Select AI Difficulty</h3>
+                    <div class="button-row">
+                        <button id="veryeasyButton" class="ai-score-button">Very Easy</button>
+                        <button id="easyButton" class="ai-score-button">Easy</button>
+                        <button id="mediumButton" class="ai-score-button selected-glow">Medium</button>
+                        <button id="hardButton" class="ai-score-button">Hard</button>
+                        <button id="veryhardButton" class="ai-score-button">Very Hard</button>
+                        <button id="demonicButton" class="ai-score-button">Demonic</button>
+                    </div>
+                </div>
+
+                <!-- Training Mode Selection -->
+                <div id="trainingModeSelection" class="hidden">
+                    <h3>Select Training Mode</h3>
+                    <div class="button-row">
+                        <button id="training-free" class="button">Free Play</button>
+                        <button id="training-beginner" class="button">Beginner</button>
+                        <button id="training-medium" class="button">Medium</button>
+                        <button id="training-advanced" class="button">Advanced</button>
+                        <button id="training-expert" class="button">Expert</button>
+                        <button id="training-master" class="button">Master</button>
+                    </div>
+                </div>
+
+                <!-- Score Selection -->
+                <div id="scoreSelection" class="hidden">
+                    <h3>Select Winning Score</h3>
+                    <div class="button-row">
+                        <button class="ai-score-button" data-score="5">5</button>
+                        <button class="ai-score-button" data-score="10">10</button>
+                        <button class="ai-score-button" data-score="15">15</button>
+                        <button class="ai-score-button" data-score="21">21</button>
+                        <button class="ai-score-button" data-score="30">30</button>
+                        <button class="ai-score-button" data-score="50">50</button>
+                    </div>
+                    <div class="custom-score-container">
+                        <label for="customScoreInput">Custom Score:</label>
+                        <input type="number" id="customScoreInput" min="1" max="100" value="21">
+                        <button id="customScoreButton" class="ai-score-button">Set</button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="startGameButton" class="button button-green">Start Game</button>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pauseScreen" class="home-screen hidden">
+            <h2 id="pauseText">Game Paused</h2>
+            <button id="resumeButton" class="button button-resume">Resume</button>
+            <button id="restartButton" class="button button-play-again">Restart</button>
+            <button id="homeButton" class="button button-home">Home</button>
+        </div>
+
+        <!-- End Screen -->
+        <div id="endScreen" class="home-screen hidden">
+            <h2 id="endText">Game Over</h2>
+            <p id="endSubText"></p>
+            <div class="button-row">
+                <button id="playAgainButton" class="button button-play-again">Play Again</button>
+                <button id="endHomeButton" class="button button-home">Home</button>
+            </div>
+        </div>
+
+        <!-- Controls Screen -->
+        <div id="controlsScreen" class="home-screen hidden">
+            <h2>Controls</h2>
+            <div class="controls">
+                <h3>Player 1 (Left)</h3>
+                <p><strong>W/S</strong> - Move paddle up/down</p>
+                <p><strong>SPACE</strong> - Charge special shot</p>
+                <p><strong>Q</strong> - Power Shot</p>
+                <p><strong>E</strong> - Curve Shot</p>
+                
+                <h3>Player 2 (Right)</h3>
+                <p><strong>↑/↓</strong> - Move paddle up/down</p>
+                <p><strong>ENTER</strong> - Charge special shot</p>
+                <p><strong>P</strong> - Power Shot</p>
+                <p><strong>;</strong> - Curve Shot</p>
+                
+                <h3>General</h3>
+                <p><strong>ESC</strong> - Pause game</p>
+                <p><strong>H</strong> - Return to home</p>
+                
+                <button id="controlsBackButton" class="button">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-button" id="settingsCloseButton">&times;</button>
+            <h2>Settings</h2>
+            
+            <div class="settings-group">
+                <h3>Audio</h3>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="musicToggle">Music</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" id="musicToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="sfxSlider">Sound Effects</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="range" id="sfxSlider" min="0" max="100" value="80" class="dynamic-fill">
+                        <span id="sfxValue">80%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Visual Effects</h3>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="vfxSlider">VFX Intensity</label>
+                        <span class="performance-warning">Higher settings may affect performance</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <div class="slider-track-container">
+                            <input type="range" id="vfxSlider" min="0" max="100" value="70" class="dynamic-fill">
+                        </div>
+                        <span id="vfxValue">70%</span>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="fpsToggle">Show FPS</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <label class="switch">
+                            <input type="checkbox" id="fpsToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Colors</h3>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="ballColorPicker">Ball Color</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="color" id="ballColorPicker" value="#ffffff">
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="paddleColorPicker">Paddle Color</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="color" id="paddleColorPicker" value="#00aaff">
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <div class="setting-label">
+                        <label for="backgroundColorPicker">Background Color</label>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="color" id="backgroundColorPicker" value="#0d0f1a">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button id="resetSettingsButton" class="button secondary-button">Reset to Defaults</button>
+                <button id="settingsSaveButton" class="button button-green">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="instructionsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-button" id="instructionsCloseButton">&times;</button>
+            <h2>How to Play</h2>
+            <p>Welcome to Ping Pong Masters! Here's everything you need to know:</p>
+            
+            <h3>Basic Controls</h3>
+            <ul>
+                <li><strong>Player 1 (Left):</strong> W/S to move, SPACE to charge, Q for Power Shot, E for Curve Shot</li>
+                <li><strong>Player 2 (Right):</strong> ↑/↓ to move, ENTER to charge, P for Power Shot, ; for Curve Shot</li>
+                <li><strong>General:</strong> ESC to pause, H to return home</li>
+            </ul>
+
+            <h3>Special Shots</h3>
+            <ul>
+                <li><strong>Power Shot:</strong> Hold charge button, release for extra speed and impact</li>
+                <li><strong>Curve Shot:</strong> Hold charge button, release for curved trajectory</li>
+                <li><strong>Power Curve:</strong> Perfect timing combines both effects</li>
+                <li><strong>Draft Shot:</strong> Creates a vacuum effect pulling the ball</li>
+            </ul>
+
+            <h3>Game Modes</h3>
+            <ul>
+                <li><strong>VS AI:</strong> Challenge computer opponents of varying difficulty</li>
+                <li><strong>Training:</strong> Practice with objectives and skill progression</li>
+                <li><strong>2 Player:</strong> Local multiplayer on the same device</li>
+            </ul>
+
+            <div class="modal-buttons">
+                <button id="instructionsBackButton" class="button">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="updatesModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-button" id="updatesCloseButton">&times;</button>
+            <h2>Latest Updates</h2>
+            <p>Welcome to Ping Pong Masters v2.0!</p>
+            
+            <h3>New Features</h3>
+            <ul>
+                <li><strong>Special Shots:</strong> Power Shot, Curve Shot, Power Curve, and Draft Shot</li>
+                <li><strong>Training Mode:</strong> Progressive skill challenges with objectives</li>
+                <li><strong>Customizable Settings:</strong> Audio, visual effects, and color customization</li>
+                <li><strong>Mobile Support:</strong> Touch controls for mobile devices</li>
+                <li><strong>Performance Optimizations:</strong> Smooth 60 FPS gameplay</li>
+            </ul>
+
+            <h3>Improvements</h3>
+            <ul>
+                <li>Enhanced AI with multiple difficulty levels</li>
+                <li>Improved visual effects and animations</li>
+                <li>Better sound design and audio feedback</li>
+                <li>Responsive design for all screen sizes</li>
+            </ul>
+
+            <div class="modal-buttons">
+                <button id="updatesBackButton" class="button">Awesome!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Overlay -->
+    <div id="messageOverlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div id="messageText"></div>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confettiContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

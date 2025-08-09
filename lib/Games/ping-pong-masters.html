@@ -1,0 +1,2731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Masters - The Ultimate Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            /* Neon & Glass Theme Colors */
+            --bg-dark: #0d0f1a; --bg-light: #1a1c2c;
+            --glass-bg: rgba(22, 24, 38, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-blur: 16px;
+            
+            --text-light: #e0e5f1; --text-med: #8c95b4; --text-dark: #4a516e;
+            
+            --accent-blue: #00aaff; --accent-red: #ff3366; --accent-yellow: #f8c200;
+            --accent-green: #00ffaa; --accent-purple: #9f55ff; --accent-cyan: #00e5e5;
+            
+            --selection-glow-color: var(--accent-blue); --winning-green: var(--accent-green);
+            --grad-x: 50%; --grad-y: 50%;
+
+            /* Training Theme Colors */
+            --train-bg-start: #da22ff; --train-bg-end: #8e2de2; --train-player-paddle: #fde047;
+            --train-ball: #ffffff; --train-table-text: rgba(255, 255, 255, 0.4); --train-table-text-glow: #fde047;
+            /* Multiplayer Theme Colors */
+            --mp-bg-start: #ff4e50; --mp-bg-end: #f9d423; --mp-player-paddle: #f97316;
+            --mp-opponent-paddle: var(--accent-purple); --mp-ball: #ffffff; --mp-net: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh; background-color: var(--bg-dark); color: var(--text-light);
+            background: var(--bg-dark) radial-gradient(circle at 100% 0%, rgba(0, 170, 255, 0.15), transparent 40%),
+                        radial-gradient(circle at 0% 100%, rgba(159, 85, 255, 0.15), transparent 40%);
+            margin: 0; padding: 1rem; touch-action: none; 
+            overflow: auto;
+        }
+        #background-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000000; z-index: -1;
+            opacity: 0; transition: opacity 0.5s ease-in-out;
+        }
+        #background-overlay.visible { opacity: 1; }
+
+        #contentWrapper {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;
+            min-height: calc(100vh - 2rem);
+        }
+        .hidden { display: none !important; }
+
+        #gameTitle {
+            font-size: 3rem; font-weight: 700; letter-spacing: -1px; color: white;
+            text-shadow: 0 0 5px #fff, 0 0 10px var(--accent-cyan), 0 0 20px var(--accent-blue), 0 0 40px var(--accent-blue);
+            margin-bottom: 2rem; transition: text-shadow 0.3s ease;
+        }
+        body.extra-effects-disabled #gameTitle { text-shadow: none; }
+
+        #gameContainer {
+            border: 2px solid var(--glass-border); border-radius: 0.75rem; 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
+            position: relative; box-sizing: border-box; width: 100%; max-width: 1800px; overflow: hidden;
+            transition: transform 0.1s ease-in-out, box-shadow 0.3s ease-out;
+        }
+        #gameContainer.screen-shake { animation: screen-shake-animation 0.15s 1 linear; }
+        #gameContainer.screen-swerve { animation: screen-swerve-animation 0.2s 1 ease-out; }
+        #gameContainer.power-curve-impact { animation: power-curve-impact-animation 0.25s 1 ease-out; }
+        @keyframes screen-shake-animation { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(4px, -2px) rotate(-0.2deg); } 50% { transform: translate(-3px, 3px) rotate(0.1deg); } 75% { transform: translate(2px, -3px) rotate(-0.1deg); } }
+        @keyframes screen-swerve-animation { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(1.5deg); } }
+        @keyframes power-curve-impact-animation { 0%, 100% { transform: translate(0, 0) skewX(0deg) scale(1); } 20% { transform: translate(3px, -4px) skewX(1.5deg) scale(1.02); } 40% { transform: translate(-5px, 3px) skewX(-1.8deg) scale(1.04); } 60% { transform: translate(4px, 4px) skewX(1.2deg) scale(1.01); } 80% { transform: translate(-2px, -3px) skewX(-0.5deg) scale(1); } }
+        
+        /* NEW: UI Shake for button clicks */
+        @keyframes ui-shake-anim { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(2px, -1px) rotate(0.5deg); } 50% { transform: translate(-2px, 1px) rotate(-0.5deg); } 75% { transform: translate(1px, 2px) rotate(0.2deg); } }
+        .ui-shake { animation: ui-shake-anim 0.2s linear; }
+
+        /* NEW: Subtle hit/pulse animations */
+        @keyframes subtle-hit-glow { 50% { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2), 0 0 15px 5px rgba(255, 255, 255, 0.4); } }
+        .subtle-hit-glow { animation: subtle-hit-glow 0.15s 1 ease-out; }
+        
+        @keyframes bg-pulse-anim {
+            0% { box-shadow: inset 0 0 0px 0px var(--pulse-color, transparent); }
+            50% { box-shadow: inset 0 0 80px 40px var(--pulse-color, transparent); }
+            100% { box-shadow: inset 0 0 0px 0px var(--pulse-color, transparent); }
+        }
+        .bg-pulse { animation: bg-pulse-anim 0.8s 1 ease-out; }
+
+        canvas { display: block; width: 100%; height: auto; }
+
+        .charge-bar-container { position: absolute; top: 0; width: 10px; height: 100%; display: flex; align-items: center; pointer-events: none; visibility: hidden; }
+        #p1ChargeBarContainer { left: calc(0.02 * 100% + 1.5 * (10px)); }
+        #p2ChargeBarContainer { right: calc(0.02 * 100% + 1.5 * (10px)); }
+        .charge-bar-outer { width: 100%; height: 50%; background-color: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); border-radius: 5px; position: relative; overflow: hidden; }
+        .charge-bar-inner { position: absolute; bottom: 0; left: 0; width: 100%; height: 0; background: linear-gradient(0deg, var(--accent-purple), #c71585, #ff4500); border-radius: 5px; transition: height 0.05s linear; box-shadow: 0 0 10px #c71585; animation: pulse-charge 1s infinite; }
+        .charge-bar-inner.perfect-charge { background: linear-gradient(0deg, var(--accent-yellow), #fef08a, #facc15); animation: pulse-perfect-charge 0.5s infinite; }
+        @keyframes pulse-charge { 0% { box-shadow: 0 0 8px var(--accent-purple); } 50% { box-shadow: 0 0 20px #ff4500; } 100% { box-shadow: 0 0 8px var(--accent-purple); } }
+        @keyframes pulse-perfect-charge { 0% { box-shadow: 0 0 15px #fde047; } 50% { box-shadow: 0 0 35px #fef08a; } 100% { box-shadow: 0 0 15px #fde047; } }
+
+        /* === HOME SCREEN & CARDS === */
+        .home-screen, .controls { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; margin-top: 1rem; }
+        .mode-selection-cards { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+        .card {
+            background: linear-gradient(135deg, rgba(0, 170, 255, 0.2), transparent 70%), var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--accent-blue);
+            padding: 1.5rem; border-radius: 0.75rem; text-align: center; cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.3s ease;
+            width: 200px; position: relative; overflow: hidden;
+            --selection-glow-color: var(--accent-blue);
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--accent-cyan);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2), 0 0 15px var(--accent-cyan); 
+        }
+        .card.selected {
+            transform: translateY(-2px);
+            border-color: var(--selection-glow-color);
+            box-shadow: 0 0 20px var(--selection-glow-color), 0 0 40px var(--selection-glow-color);
+        }
+        .card h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: #fff; } 
+        .card p { color: var(--text-med); font-size: 0.9rem; }
+        .highscore-display { font-size: 0.8rem; color: var(--accent-yellow); font-weight: 600; margin-top: 0.75rem; }
+        
+        #homeInstructionText {
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-weight: 600; text-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+            min-height: 28px; width: 100%; max-width: 650px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; font-size: 1.1rem;
+            transition: all 0.3s ease-in-out;
+        }
+        #homeInstructionText.fade-in { animation: fade-in-anim 0.3s ease; }
+        @keyframes fade-in-anim { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .mode-options-container { margin-top: 0.5rem; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        #aiDifficultySelection .button-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem; width: 100%; max-width: 650px; }
+        .button-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
+        
+        /* === BUTTONS (HYBRID NEON/GLASS + GRADIENT STYLE) === */
+        button, .button {
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            color: var(--text-light); font-weight: 600; font-family: 'Poppins', sans-serif;
+            padding: 0.75rem 1rem; border-radius: 0.5rem;
+            border: 1px solid var(--glass-border);
+            cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            text-align: center; position: relative; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); overflow: visible;
+        }
+        button:hover, .button:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-blue);
+            color: #fff; text-shadow: 0 0 5px var(--accent-blue);
+        }
+        /* MODIFIED: More responsive button active state */
+        button:active, .button:active {
+            transform: translateY(2px) scale(0.97);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            filter: brightness(1.1);
+            transition: transform 0.05s, filter 0.05s, box-shadow 0.05s;
+        }
+        .button.button-green { background: linear-gradient(to right, #22c55e, #4ade80), var(--glass-bg); }
+        .button.button-green:hover { border-color: var(--accent-green); box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-green); text-shadow: 0 0 5px var(--accent-green); }
+        .button.button-red { background: linear-gradient(to right, #e11d48, #ef4444), var(--glass-bg); }
+        .button.button-red:hover { border-color: var(--accent-red); box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-red); text-shadow: 0 0 5px var(--accent-red); }
+        
+        /* MODIFIED: Secondary buttons are now larger and more enticing */
+        .button.secondary-button {
+            background: linear-gradient(to right, #4F46E5, #7C3AED), var(--glass-bg);
+            animation: subtle-purple-glow 2.5s infinite alternate ease-in-out;
+            padding: 0.9rem 1.75rem;
+            font-size: 1.25rem; /* Increased font size */
+        }
+        /* NEW: Keyframe animation for the new button glow */
+        @keyframes subtle-purple-glow {
+            from {
+                text-shadow: 0 0 5px var(--accent-purple), 0 0 8px rgba(159, 85, 255, 0.5);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 5px var(--accent-purple);
+            }
+            to {
+                text-shadow: 0 0 8px var(--accent-purple), 0 0 15px rgba(159, 85, 255, 0.8);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 15px var(--accent-purple);
+            }
+        }
+        .button.secondary-button:hover {
+            border-color: var(--accent-purple);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4), 0 0 20px var(--accent-purple), 0 0 35px rgba(159, 85, 255, 0.7);
+            text-shadow: 0 0 10px var(--accent-purple);
+            transform: translateY(-4px) scale(1.05);
+        }
+        
+        .button-resume { background: linear-gradient(to right, var(--accent-cyan), var(--accent-green)), var(--glass-bg); }
+        .button-resume:hover { border-color: var(--accent-green); box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-green); text-shadow: 0 0 5px var(--accent-green); }
+        .button-play-again { background: linear-gradient(to right, var(--accent-blue), var(--accent-purple)), var(--glass-bg); }
+        .button-play-again:hover { border-color: var(--accent-purple); box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-purple); text-shadow: 0 0 5px var(--accent-purple); }
+        .button-home { background: linear-gradient(to right, #6d28d9, #4f46e5), var(--glass-bg); }
+        .button-home:hover { border-color: #a78bfa; box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px #a78bfa; text-shadow: 0 0 5px #a78bfa; }
+
+
+        #veryeasyButton { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #86efac, transparent), radial-gradient(circle at 50% 50%, #4ade80, #15803d), var(--glass-bg); } 
+        #easyButton { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #a5f3fc, transparent), radial-gradient(circle at 50% 50%, #7dd3fc, #0369a1), var(--glass-bg); }
+        #mediumButton { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #fcd34d, transparent), radial-gradient(circle at 50% 50%, #fbbf24, #b45309), var(--glass-bg); }
+        #hardButton { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #fb923c, transparent), radial-gradient(circle at 50% 50%, #f97316, #dc2626), var(--glass-bg); }
+        #veryhardButton { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #ef4444, transparent), radial-gradient(circle at 50% 50%, #f97316, #4c1d95), var(--glass-bg); } 
+        #demonicButton { background: radial-gradient(circle at 20% 80%, #7e22ce, transparent 70%), radial-gradient(circle at 80% 20%, #b91c1c, transparent 70%), radial-gradient(circle at 50% 50%, #4c1d95, #1e293b), var(--glass-bg); }  
+        #demonicButton:hover, #training-master:hover { border-color: var(--accent-red); box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 15px var(--accent-red); }
+        
+        #training-free.button { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #f0abfc, transparent), radial-gradient(circle at 50% 50%, #da22ff, #8e2de2), var(--glass-bg); }
+        #training-beginner.button { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #86efac, transparent), radial-gradient(circle at 50% 50%, #4ade80, #15803d), var(--glass-bg); }
+        #training-medium.button { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #a5f3fc, transparent), radial-gradient(circle at 50% 50%, #7dd3fc, #0369a1), var(--glass-bg); }
+        #training-advanced.button { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #fcd34d, transparent), radial-gradient(circle at 50% 50%, #fbbf24, #b45309), var(--glass-bg); }
+        #training-expert.button { background: radial-gradient(circle at var(--grad-x) var(--grad-y), #fb923c, transparent), radial-gradient(circle at 50% 50%, #f97316, #dc2626), var(--glass-bg); }
+        #training-master.button { background: radial-gradient(circle at 20% 80%, #7e22ce, transparent 70%), radial-gradient(circle at 80% 20%, #b91c1c, transparent 70%), radial-gradient(circle at 50% 50%, #4c1d95, #1e293b), var(--glass-bg); }
+        
+        .ai-score-button { background: linear-gradient(to right, var(--accent-blue), var(--accent-cyan)), var(--glass-bg); }
+        .ai-score-button:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 10px var(--accent-cyan);
+            text-shadow: 0 0 5px var(--accent-cyan);
+        }
+        
+        .mp-score-button { background: linear-gradient(to right, var(--mp-bg-start), var(--mp-bg-end)), var(--glass-bg); }
+
+        button.selected-glow { 
+            box-shadow: 0 0 0 2px white, 0 0 0 4px var(--selection-glow-color, var(--accent-blue)), 0 0 15px var(--selection-glow-color, var(--accent-blue));
+            border-color: var(--selection-glow-color, var(--accent-blue));
+        }
+
+        /* NEW: Style for completed levels */
+        .button.completed {
+            border-width: 3px;
+            padding: calc(0.75rem - 2px) calc(1rem - 2px);
+            position: relative;
+        }
+        .button.completed::before {
+            content: '';
+            position: absolute;
+            top: -3px; right: -3px; bottom: -3px; left: -3px;
+            z-index: -1;
+            border-radius: calc(0.5rem + 2px);
+            background: linear-gradient(45deg, #b45309, var(--accent-yellow), #b45309);
+            opacity: 0.8;
+            transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+        }
+        .button.completed:hover::before {
+            opacity: 1;
+            background: var(--accent-yellow);
+            box-shadow: 0 0 15px var(--accent-yellow), 0 0 25px var(--accent-yellow);
+        }
+
+
+        #demonicButton .drip, #training-master .drip, #startGameButton .drip {
+            position: absolute; bottom: 0; width: 8px; height: 8px; background: linear-gradient(315deg, #7e22ce, #b91c1c); border-radius: 50%;
+            animation-name: drip-fall; animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335); animation-iteration-count: infinite; z-index: -1;
+        }
+        @keyframes drip-fall {
+            0% { transform: translateY(0) scaleX(1); opacity: 1; } 10% { transform: translateY(8px) scale(0.9, 1.3); } 20% { transform: translateY(20px) scale(0.7, 1.8); }
+            90% { transform: translateY(70px) scale(0.4, 0.4); opacity: 1; } 100% { transform: translateY(70px) scale(0.4, 0.4); opacity: 0; }
+        }
+        #demonicButton .drip:nth-of-type(1), #training-master .drip:nth-of-type(1), #startGameButton .drip:nth-of-type(1) { left: 25%; animation-duration: 2.2s; animation-delay: 0.5s; }
+        #demonicButton .drip:nth-of-type(2), #training-master .drip:nth-of-type(2), #startGameButton .drip:nth-of-type(2) { left: 55%; animation-duration: 2.8s; animation-delay: 1.2s; }
+        #demonicButton .drip:nth-of-type(3), #training-master .drip:nth-of-type(3), #startGameButton .drip:nth-of-type(3) { left: 75%; animation-duration: 2.5s; animation-delay: 0.1s; }
+
+
+        /* === SLIDERS (NEON/GLASS STYLE) - MODIFIED for better UX === */
+        input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; width: 100%; }
+        input[type=range]:focus { outline: none; }
+        .slider-track-container { position: relative; width: 100%;}
+        input[type=range]::-webkit-slider-runnable-track { height: 12px; border-radius: 6px; background: var(--text-dark); }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            margin-top: -8px; /* Adjusted for new track height */
+            height: 28px; /* Was 20px */
+            width: 28px; /* Was 20px */
+            background: #fff;
+            border-radius: 50%;
+            border: 3px solid var(--track-color, var(--accent-blue)); /* Bolder border */
+            box-shadow: 0 0 8px var(--track-color, var(--accent-blue)); /* Enhanced glow */
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            position: relative;
+            z-index: 2;
+        }
+        input[type=range]:active::-webkit-slider-thumb {
+            transform: scale(1.2); /* Was 1.15 */
+            box-shadow: 0 0 15px var(--track-color, var(--accent-blue)), 0 0 30px var(--track-color, var(--accent-blue)); /* Much stronger glow */
+        }
+        input[type=range]::-moz-range-track { height: 12px; border-radius: 6px; background: var(--text-dark); }
+        input[type=range]::-moz-range-thumb {
+            height: 28px; width: 28px; background: #fff; border-radius: 50%;
+            border: 3px solid var(--track-color, var(--accent-blue)); box-shadow: 0 0 8px var(--track-color, var(--accent-blue));
+        }
+        
+        input[type=range].dynamic-fill { --fill-percent: 0%; --track-color: var(--accent-blue); }
+        input[type=range].dynamic-fill::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--track-color) 0%, var(--track-color) var(--fill-percent), var(--text-dark) var(--fill-percent), var(--text-dark) 100%); }
+        input[type=range].dynamic-fill::-moz-range-track { background: linear-gradient(to right, var(--track-color) 0%, var(--track-color) var(--fill-percent), var(--text-dark) var(--fill-percent), var(--text-dark) 100%); }
+        
+        #vfxSliderWrapper::after { /* Marker for 100% on VFX slider */
+            content: ''; position: absolute; left: 66.66%; top: -2px; bottom: -2px; width: 2px;
+            background-color: rgba(255, 255, 255, 0.3); border-radius: 1px; z-index: 1;
+        }
+        input[type=range]#vfxSlider.dynamic-fill { --track-gradient: linear-gradient(to right, var(--accent-green) 0%, var(--accent-yellow) 66.66%, var(--accent-red) 66.67%, #b91c1c 100%); }
+        input[type=range]#vfxSlider.dynamic-fill::-webkit-slider-runnable-track { background-image: var(--track-gradient), linear-gradient(var(--text-dark), var(--text-dark)); background-size: var(--fill-percent) 100%, 100% 100%; background-repeat: no-repeat; }
+        input[type=range]#vfxSlider.dynamic-fill::-moz-range-track { background-image: var(--track-gradient), linear-gradient(var(--text-dark), var(--text-dark)); background-size: var(--fill-percent) 100%, 100% 100%; background-repeat: no-repeat; }
+        
+        .custom-score-container { position: relative; width: 100%; max-width: 400px; background: rgba(0,0,0,0.2); border-radius: 0.5rem; padding: 1.25rem; margin-top: 1rem; text-align: center; border: 1px solid var(--glass-border); }
+        /* Redundant slider styles removed as global ones are now larger */
+
+        .progress-check { color: var(--accent-green); font-size: 1.2rem; font-weight: bold; position: absolute; top: 5px; right: 8px; text-shadow: 0 0 8px var(--accent-green); z-index: 2; }
+        button:disabled, .button:disabled { background: var(--bg-light); cursor: not-allowed; transform: none; box-shadow: none; color: var(--text-med); border-color: var(--text-dark); }
+        button:disabled:hover, .button:disabled:hover { box-shadow: none; text-shadow: none;}
+
+        #scoreDisplay, #objectiveDisplay {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            padding: 0.5rem 1.5rem; border-radius: 0.5rem; font-weight: 600; z-index: 5; text-align: center;
+            border: 1px solid var(--glass-border);
+            min-width: 250px; font-family: 'Poppins', sans-serif; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+        }
+        #scoreDisplay { color: white; font-size: 2.5rem; }
+        #scoreDisplay .score-value.winning-score { color: var(--winning-green); text-shadow: 0 0 10px var(--winning-green); }
+        #scoreDisplay .opponent-name, #scoreDisplay .score-target { font-size: 0.8rem; display: block; color: var(--text-med); font-weight: 400; }
+        #objectiveDisplay { color: var(--accent-yellow); font-size: 1.2rem; text-shadow: 0 0 8px var(--accent-yellow); }
+        
+        #rallyDisplay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Bangers', cursive; font-size: 10vw; color: rgba(255, 255, 255, 0.2); text-shadow: 0 0 25px rgba(0, 170, 255, 0.4); z-index: 1; pointer-events: none; line-height: 1; transition: transform 0.1s ease-out; }
+        #rallyDisplay.pop { animation: rally-pop 0.2s ease-out; }
+        @keyframes rally-pop { 50% { transform: translate(-50%, -50%) scale(1.3); } }
+
+        #powerShotText, #curveShotText, #powerCurveShotText, #draftText { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); font-family: 'Bangers', cursive; font-size: 4rem; z-index: 6; pointer-events: none; opacity: 0; }
+        #powerShotText { color: #f8c200; text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff9d00, 0 0 30px #ff9d00, 0 0 40px #ff4500, 0 0 55px #ff4500; }
+        #curveShotText { color: #e0ffff; text-shadow: 0 0 5px #fff, 0 0 12px var(--accent-cyan), 0 0 22px var(--accent-cyan), 0 0 35px var(--accent-blue), 0 0 50px var(--accent-blue); -webkit-text-stroke: 1px #0077be; }
+        #powerCurveShotText { background: linear-gradient(90deg, #ff4500, var(--accent-purple), var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(255,255,255,0.7); -webkit-text-stroke: 1px var(--accent-purple); }
+        #draftText { background: linear-gradient(90deg, #e5e7eb, #9ca3af, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 10px rgba(255,255,255,0.8); -webkit-text-stroke: 1px #9ca3af; }
+        #powerShotText.show, #curveShotText.show, #powerCurveShotText.show, #draftText.show { animation: power-shot-pop 1s ease-out forwards; }
+        @keyframes power-shot-pop { 0% { transform: translateX(-50%) scale(0.5); opacity: 0; } 15% { transform: translateX(-50%) scale(1.2); opacity: 1; } 80% { transform: translateX(-50%) scale(1.0); opacity: 1; } 100% { transform: translateX(-50%) scale(1); opacity: 0; } }
+
+        /* === MODALS (NEON/GLASS STYLE) === */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(13, 15, 26, 0.7);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 100; padding: 1rem; opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay:not(.hidden) { opacity: 1; visibility: visible; }
+        .modal-content { 
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            padding: 2.5rem; border-radius: 1rem; 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4);
+            color: var(--text-light); text-align: center; max-width: 90vw; width: 600px; 
+            max-height: 90vh; overflow-y: auto; 
+            border: 1px solid var(--glass-border);
+            border-top: 4px solid var(--accent-blue);
+            position: relative; transform: scale(0.95); transition: transform 0.3s ease-out, box-shadow 0.5s ease;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth; /* ADDED: Smoother scrolling */
+        }
+        .modal-overlay.new-highscore-glow .modal-content { animation: highScoreGlow 2.5s ease-in-out; }
+        @keyframes highScoreGlow {
+            0%, 100% { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4), 0 0 15px var(--accent-blue); border-top-color: var(--accent-blue); }
+            50% { box-shadow: 0 20px 40px -5px rgba(248, 194, 0, 0.3), 0 0 50px var(--accent-yellow); border-top-color: var(--accent-yellow); }
+        }
+        .modal-overlay:not(.hidden) .modal-content { transform: scale(1); }
+        .modal-close-button { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 2.5rem; color: var(--accent-red); font-weight: bold; cursor: pointer; line-height: 1; padding: 0.5rem; transition: transform 0.2s ease, color 0.2s ease, text-shadow 0.2s ease; }
+        .modal-close-button:hover { transform: scale(1.1); color: #ff6b6b; text-shadow: 0 0 8px var(--accent-red); }
+        .modal-content h2 { font-size: 2.2rem; font-weight: bold; margin-bottom: 1rem; color: white; text-shadow: 0 0 10px var(--accent-blue); }
+        .modal-content p { margin-bottom: 1rem; line-height: 1.7; color: var(--text-med); }
+        .modal-content ul { list-style-type: none; padding-left: 0; text-align: left; margin-bottom: 1.5rem; }
+        .modal-content li { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem; }
+        .modal-content li strong { color: var(--accent-yellow); }
+        .modal-buttons { margin-top: 2rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        
+        /* === SETTINGS MODAL OVERHAUL === */
+        .settings-group {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .settings-group h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            text-shadow: 0 0 5px var(--accent-purple);
+        }
+        .settings-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center; gap: 1rem;
+            padding: 0.5rem 0;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease; /* ADDED: Transition for hover */
+        }
+        .settings-row:hover { /* ADDED: Subtle hover effect */
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+        .settings-row .setting-label label { font-weight: 600; color: var(--text-light); }
+        .settings-row .setting-label .performance-warning { font-size: 0.75rem; color: var(--text-med); opacity: 0.8; display: block; font-weight: 400;}
+        .settings-row .input-wrapper { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
+        .settings-row input[type="range"] { width: 150px; }
+        .settings-row input[type="color"] { -webkit-appearance: none; width: 44px; height: 32px; border: none; background: none; padding: 0; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid var(--glass-border); }
+        .settings-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        .settings-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+        .settings-row .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .settings-row .switch input { opacity: 0; width: 0; height: 0; }
+        .settings-row .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--text-dark); transition: .4s; border-radius: 28px; }
+        .settings-row .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        .settings-row input:checked + .slider { background-color: var(--accent-blue); box-shadow: 0 0 8px var(--accent-blue); }
+        .settings-row input:checked + .slider:before { transform: translateX(22px); }
+
+        #messageOverlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(13, 15, 26, 0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 2.25rem; font-weight: bold;
+            visibility: hidden; opacity: 0; transition: all 0.3s ease; z-index: 10; overflow: hidden; pointer-events: none;
+        }
+        #messageOverlay.visible { visibility: visible; opacity: 1; pointer-events: all; }
+        #messageText .highscore-info { font-size: 1.25rem; color: var(--text-med); font-weight: 400; margin-top: 1rem; line-height: 1.6; }
+        
+        #inGameControls { position: absolute; top: 20px; right: 20px; z-index: 50; display: flex; gap: 12px; }
+        #inGameControls button { 
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            color: white; border: 1px solid var(--glass-border); border-radius: 8px; width: 48px; height: 48px; font-size: 1.75rem; 
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; padding: 0; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+        }
+        #inGameControls button:hover { background-color: rgba(255,255,255,0.1); transform: scale(1.1); text-shadow: 0 0 5px white; }
+        #inGameExitButton { color: var(--accent-red); } #inGameExitButton:hover { text-shadow: 0 0 8px var(--accent-red); }
+
+        #fpsDisplay, #speedDisplay {
+            position: absolute;
+            z-index: 50;
+            font-family: monospace;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            text-shadow: 0 0 5px currentColor;
+            transition: color 0.5s ease, text-shadow 0.5s ease;
+        }
+        #fpsDisplay { top: 10px; left: 10px; font-size: 0.9rem; }
+        #speedDisplay {
+            bottom: 10px; right: 20px; font-family: 'Bangers', cursive; letter-spacing: 1px;
+            font-weight: 400; font-size: 2.25rem; -webkit-text-stroke: 1px rgba(0,0,0,0.6);
+        }
+
+        #countdownText { font-size: 18vw; font-weight: 700; transform: scale(0.8); opacity: 0; transition: color 0.1s ease, text-shadow 0.1s ease; }
+        #countdownText.pop { animation: countdown-pop 0.9s ease-out forwards; }
+        @keyframes countdown-pop { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        #pauseText { font-size: 4rem; font-weight: bold; margin-bottom: 1.5rem; }
+        /* NEW: Styles for the new pause menu icon buttons */
+        .pause-icon-btn {
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease-out;
+        }
+        .pause-icon-btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            border-color: var(--accent-purple);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4), 0 0 20px var(--accent-purple);
+            color: white;
+            text-shadow: 0 0 8px var(--accent-purple);
+        }
+        .pause-icon-btn:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            filter: brightness(1.1);
+        }
+        
+        .mobile-controls-container {
+            position: absolute;
+            bottom: 2%;
+            width: 45%;
+            height: 35%;
+            z-index: 20;
+            display: grid;
+            grid-template-areas: "specials moves";
+            grid-template-columns: 1fr 1fr;
+            gap: 10%;
+            pointer-events: none;
+        }
+        .mobile-controls-container.p1 { left: 1%; }
+        .mobile-controls-container.p2 { right: 1%; grid-template-areas: "moves specials"; }
+
+        .mobile-controls-container .move-controls,
+        .mobile-controls-container .special-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 15%;
+            height: 100%;
+            pointer-events: auto;
+        }
+        .move-controls { grid-area: moves; }
+        .special-controls { grid-area: specials; }
+
+        .mobile-controls-container button {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            font-size: 1.75rem;
+            font-weight: bold;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            transition: background-color 0.2s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .mobile-controls-container button:active {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+        }
+
+        /* --- NEW: Confetti --- */
+        #confettiContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 1; }
+        .confetti-piece {
+            position: absolute; width: 10px; height: 20px;
+            opacity: 0; animation: confetti-fall 4s ease-in-out infinite;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="">
+
+    <!-- Static UI Elements -->
+    <div id="background-overlay"></div>
+    <audio id="bgMusic" loop><source src="https://cdn.pixabay.com/audio/2022/10/24/audio_3198f73b64.mp3" type="audio/mpeg"></audio>
+    <audio id="powerShotWooshSound"><source src="https://cdn.pixabay.com/audio/2022/03/15/audio_14f3507823.mp3" type="audio/mpeg"></audio>
+    <audio id="curveShotSound"><source src="https://cdn.pixabay.com/audio/2022/03/24/audio_3234a5d8ce.mp3" type="audio/mpeg"></audio>
+    <audio id="powerCurveShotSound"><source src="https://cdn.pixabay.com/audio/2022/11/22/audio_731c313264.mp3" type="audio/mpeg"></audio>
+    <audio id="chargeSound" loop><source src="https://cdn.pixabay.com/audio/2022/08/24/audio_514f3521b7.mp3" type="audio/mpeg"></audio>
+    <audio id="draftSound"><source src="https://cdn.pixabay.com/audio/2022/04/20/audio_510b1d3a53.mp3" type="audio/mpeg"></audio>
+    <audio id="uiCloseSound"><source src="https://cdn.pixabay.com/audio/2022/03/10/audio_52506a44a5.mp3" type="audio/mpeg"></audio>
+    <audio id="uiClickSound"><source src="https://cdn.pixabay.com/audio/2021/08/04/audio_542a0d1334.mp3" type="audio/mpeg"></audio>
+    <audio id="newHighScoreSound"><source src="https://cdn.pixabay.com/audio/2022/01/18/audio_8354c4083d.mp3" type="audio/mpeg"></audio>
+    <audio id="cheerSound"><source src="https://cdn.pixabay.com/audio/2022/11/15/audio_14f1b31a89.mp3" type="audio/mpeg"></audio>
+    <audio id="uiContinueSound"><source src="https://cdn.pixabay.com/audio/2022/03/24/audio_9038933b59.mp3" type="audio/mpeg"></audio>
+    <audio id="uiHoverSound"><source src="https://cdn.pixabay.com/audio/2022/03/15/audio_2408c69136.mp3" type="audio/mpeg"></audio>
+    
+    <!-- Main Content Wrapper (for layout control) -->
+    <div id="contentWrapper">
+        <div id="gameTitle">Ping Pong Masters</div>
+
+        <!-- All Modals -->
+        <div id="tutorialPromptModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>Welcome!</h2>
+                <p>First time playing? We recommend a quick look at the instructions.</p>
+                <div class="modal-buttons">
+                    <button id="tutorialYesButton" class="button button-green">Show Instructions</button>
+                    <button id="tutorialNoButton" class="button">I'm a Pro!</button>
+                </div>
+            </div>
+        </div>
+        <div id="detailedTutorialModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close-button" id="closeTutorialButtonX">×</button>
+                <h2>Instructions</h2>
+                <p><strong>Player 1 Controls (Left Paddle):</strong></p>
+                <ul>
+                    <li><strong>Movement:</strong> `W` / `S` Keys. In 1-Player modes, Arrow Keys `↑` / `↓` also work.</li>
+                    <li><strong>Curve Shot (Ice):</strong> `A` Key (or `←` Arrow in 1-Player). Curves the ball!</li>
+                    <li><strong>Power Shot (Fire):</strong> `D` Key (or `→` Arrow in 1-Player). Super fast!</li>
+                    <li><strong>Power Curve Shot (Charge):</strong> Hold `A`+`D` together (or `←`+`→` in 1-Player). This **locks you in place** while you charge. As the ball approaches, your charge bar will flash yellow—this is the perfect release window! **Release one of the keys while the bar is flashing** to prime a successful shot. The more charge you build up, the stronger the effect. Release too early or too late, and the charge is wasted!</li>
+                     <li><strong>Draft Boost:</strong> Follow the ball's path closely to get a rare, random speed boost!</li>
+                </ul>
+                <p><strong>Player 2 Controls (Right Paddle, 2-Player Only):</strong></p>
+                <ul>
+                    <li><strong>Movement:</strong> `↑` / `↓` Arrow Keys.</li>
+                    <li><strong>Curve Shot (Ice):</strong> `←` Arrow Key.</li>
+                    <li><strong>Power Shot (Fire):</strong> `→` Arrow Key.</li>
+                    <li><strong>Power Curve Shot (Charge):</strong> Hold `←`+`→` Keys together. Release a key at the right time (when the charge bar flashes) to prime the shot!</li>
+                </ul>
+                <p><strong>Special Shots:</strong> Time your special shot key press just as the ball hits your paddle to unleash a devastating return! Hitting multiple special shots in a row makes them even stronger. Be warned: High-level AI can also use all of these special shots against you!</p>
+                <div class="modal-buttons"><button id="closeTutorialButton" class="button">Got It!</button></div>
+            </div>
+        </div>
+        <div id="updateLogModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close-button" id="closeUpdateLogButtonX">×</button>
+                <h2>Update Log</h2>
+                <div>
+                    <p><strong>07.20.2025: The Final Polish Update</strong></p>
+                     <ul>
+                        <li><strong>NEW: Draft Boost!</strong> A rare, random "Draft" effect can now be triggered by following the ball closely, providing a satisfying Mario Kart-style speed boost and visual effect.</li>
+                        <li><strong>FIXED: Robust Physics!</strong> The collision system has been rebuilt for full 4-edge paddle collision, eliminating phasing issues. Ball speed is now more consistent and engaging.</li>
+                        <li><strong>FIXED: UI Clarity!</strong> The 2-Player custom score slider now has a clear, always-visible counter for the selected points.</li>
+                        <li><strong>NEW: High Score Celebration!</strong> Achieving a new high score is now a major event with a huge confetti blast, a triumphant cheer, and a glowing victory screen!</li>
+                    </ul>
+                </div>
+                <div class="modal-buttons"><button id="closeUpdateLogButton" class="button">Close</button></div>
+            </div>
+        </div>
+        <div id="aiInfoModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close-button" id="closeAiInfoButtonX">×</button>
+                <h2>AI Information</h2>
+                <ul>
+                    <li><strong>Very Easy:</strong> A pushover. Rarely moves fast and has a tiny chance to use a Power Shot.</li>
+                    <li><strong>Easy:</strong> Slower paddle movement. Less accurate, with a small chance to use a Power Shot.</li>
+                    <li><strong>Medium:</strong> A competent but slower opponent. Tracks the ball well and has a <strong>15% chance</strong> to use a special shot (Power/Curve).</li>
+                    <li><strong>Hard:</strong> A serious threat. Fast with good prediction. Has a <strong>50% chance</strong> for a special (including a small chance for a Power Curve!).</li>
+                    <li><strong>Very Hard:</strong> Almost flawless. Its speed and high prediction are tough to beat. <strong>70% special shot chance</strong> and sometimes uses a Power Curve.</li>
+                    <li><strong>Demonic:</strong> Good luck. Blistering speed, **90% special shot chance** (Power/Curve/Power Curve), and focuses on pure speed and reflex.</li>
+                </ul>
+                <div class="modal-buttons"><button id="closeAiInfoButton" class="button">Got It!</button></div>
+            </div>
+        </div>
+        
+        <!-- === SETTINGS MODAL === -->
+        <div id="settingsModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close-button" id="closeSettingsButtonX">×</button>
+                <h2>Settings</h2>
+                
+                <div class="settings-group">
+                    <h3>Audio & Visuals</h3>
+                    <div class="settings-row">
+                        <div class="setting-label"><label for="sfxVolumeSlider">SFX Volume</label></div>
+                        <div class="input-wrapper">
+                            <input type="range" id="sfxVolumeSlider" min="0" max="1" step="0.05" class="dynamic-fill">
+                            <span id="sfxVolumeValue" class="w-12 text-center">100%</span>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="setting-label">
+                            <label for="vfxSlider">VFX/Particles Intensity</label>
+                            <span class="performance-warning">"Auto" at 50%. High values may affect performance.</span>
+                        </div>
+                        <div class="input-wrapper">
+                            <div id="vfxSliderWrapper" class="slider-track-container">
+                                <input type="range" id="vfxSlider" min="0" max="1.5" step="0.05" class="dynamic-fill">
+                            </div>
+                            <span id="vfxValue" class="w-12 text-center">50%</span>
+                        </div>
+                    </div>
+                     <div class="settings-row">
+                        <div class="setting-label"><label for="ballTrailToggle">Show Ball Trail</label></div>
+                        <label class="switch"><input type="checkbox" id="ballTrailToggle"><span class="slider"></span></label>
+                    </div>
+                    <div class="settings-row">
+                        <div class="setting-label"><label for="musicToggle">Background Music</label></div>
+                        <label class="switch"><input type="checkbox" id="musicToggle"><span class="slider"></span></label>
+                    </div>
+                    <div class="settings-row">
+                        <div class="setting-label">
+                            <label for="extraEffectsToggle">Extra GFX (Gradients/Lines)</label>
+                            <span class="performance-warning">May slightly affect performance.</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" id="extraEffectsToggle"><span class="slider"></span></label>
+                    </div>
+                     <div class="settings-row">
+                        <div class="setting-label"><label for="bgAnimationToggle">Background Animations</label></div>
+                        <label class="switch"><input type="checkbox" id="bgAnimationToggle"><span class="slider"></span></label>
+                    </div>
+                    <div class="settings-row">
+                        <div class="setting-label"><label for="fpsToggle">Show FPS Counter</label></div>
+                        <label class="switch"><input type="checkbox" id="fpsToggle"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Customization</h3>
+                    <div class="settings-row">
+                        <div class="setting-label"><label for="p1ColorPicker">Player 1 Paddle Color</label></div>
+                        <div class="input-wrapper">
+                            <input type="color" id="p1ColorPicker" value="#FBBF24">
+                            <button id="p1ColorReset" class="button text-xs px-2 py-1">Reset</button>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="setting-label"><label for="p2ColorPicker">Player 2 / AI Paddle Color</label></div>
+                        <div class="input-wrapper">
+                            <input type="color" id="p2ColorPicker" value="#a855f7">
+                             <button id="p2ColorReset" class="button text-xs px-2 py-1">Reset</button>
+                        </div>
+                    </div>
+                     <div class="settings-row">
+                        <div class="setting-label"><label for="ballColorPicker">Ball Color</label></div>
+                        <div class="input-wrapper">
+                            <input type="color" id="ballColorPicker" value="#FFFFFF">
+                            <button id="ballColorReset" class="button text-xs px-2 py-1">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-buttons"><button id="closeSettingsButton" class="button">Close</button></div>
+            </div>
+        </div>
+
+        <div id="exitConfirmModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>Leave Match?</h2><p>Are you sure you want to exit to the main menu? The current match progress will be lost.</p>
+                <div class="modal-buttons">
+                    <button id="cancelExitBtn" class="button button-green">No, I don't want to leave</button>
+                    <button id="confirmExitBtn" class="button button-red">Yes, I want to leave</button>
+                </div>
+            </div>
+        </div>
+        <div id="resetConfirmModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h2>Restart Match?</h2><p>Are you sure? This will reset the scores to 0-0 and start a new match.</p>
+                <div class="modal-buttons">
+                    <button id="cancelResetBtn" class="button button-green">Cancel</button>
+                    <button id="confirmResetBtn" class="button button-red">Yes, Restart</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Home Screen -->
+        <div id="homeScreen" class="home-screen hidden"> 
+            <div class="mode-selection-cards">
+                <div id="vsAiButton" class="card">
+                    <h3>VS AI</h3><p>Challenge a computer opponent.</p>
+                    <p class="highscore-display">Rally High Score: <span id="vsAiHighScoreDisplay">0</span></p>
+                </div>
+                <div id="trainingButton" class="card">
+                    <h3>Training</h3><p>Hone your skills.</p>
+                    <p class="highscore-display">Free Play Rally: <span id="trainingHighScoreDisplay">0</span></p>
+                </div>
+                <div id="multiplayerButton" class="card">
+                    <h3>2 Player</h3><p>Play with a friend.</p>
+                    <p class="highscore-display">Rally High Score: <span id="multiplayerHighScoreDisplay">0</span></p>
+                </div>
+            </div>
+            
+            <div id="homeInstructionText" class="my-4"></div>
+            
+            <div id="aiScoreSelection" class="mode-options-container hidden">
+                <div class="text-lg font-semibold">Play To</div>
+                <div class="button-row">
+                    <button class="button ai-score-button" data-score="5">5 Points</button>
+                    <button class="button ai-score-button" data-score="10">10 Points</button>
+                </div>
+            </div>
+            <div id="aiDifficultySelection" class="mode-options-container hidden">
+                <div class="text-lg mb-2 font-semibold">Select AI Difficulty</div>
+                <div class="button-row">
+                    <button id="veryeasyButton" class="button difficulty-button">Very Easy</button>
+                    <button id="easyButton" class="button difficulty-button">Easy</button>
+                    <button id="mediumButton" class="button difficulty-button">Medium</button>
+                    <button id="hardButton" class="button difficulty-button">Hard</button>
+                    <button id="veryhardButton" class="button difficulty-button">Very Hard</button>
+                </div>
+                <button id="demonicButton" class="button difficulty-button w-full max-w-sm mt-4 text-xl py-4">Demonic<span class="drip"></span><span class="drip"></span><span class="drip"></span></button>
+            </div>
+            <div id="trainingOptionsSelection" class="mode-options-container hidden">
+                <div class="text-lg mb-2 font-semibold">Select Training Mode</div>
+                <button id="training-free" class="button training-button w-full max-w-sm text-xl py-4 mb-4">Free Play: Set a High Score</button> 
+                <div class="button-row">
+                    <button id="training-beginner" class="button training-button">Beginner: The Basics<span class="progress-check hidden">✔</span></button>
+                    <button id="training-medium" class="button training-button">Medium: Power Shots<span class="progress-check hidden">✔</span></button>
+                    <button id="training-advanced" class="button training-button">Advanced: Rally & Power<span class="progress-check hidden">✔</span></button>
+                    <button id="training-expert" class="button training-button">Expert: Rally Master<span class="progress-check hidden">✔</span></button>
+                    <button id="training-master" class="button training-button">Master: The Gauntlet<span class="drip"></span><span class="drip"></span><span class="drip"></span><span class="progress-check hidden">✔</span></button>
+                </div>
+            </div>
+            <div id="multiplayerScoreSelection" class="mode-options-container hidden">
+                <div class="text-lg mb-2 font-semibold">Play To</div>
+                <div class="button-row">
+                    <button class="button mp-score-button" data-score="5">5 Points</button>
+                    <button class="button mp-score-button" data-score="10">10 Points</button>
+                    <button class="button mp-score-button" data-score="15">15 Points</button>
+                    <button class="button mp-score-button" data-score="25">25 Points</button>
+                </div>
+                <div class="custom-score-container">
+                    <label for="customScoreSlider">Custom Score: <span id="customScoreValue" class="font-bold text-white">5</span></label>
+                    <div class="slider-track-container mt-2">
+                        <input type="range" id="customScoreSlider" min="1" max="25" value="5" class="dynamic-fill">
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="startGameButton" class="button" disabled>Start Game</button>
+                <div class="secondary-buttons" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button id="instructionsButton" class="button secondary-button">Instructions</button>
+                    <button id="aiInfoButton" class="button secondary-button">AI Info</button>
+                    <button id="updateLogButton" class="button secondary-button">Update Log</button>
+                    <button id="settingsButton" class="button secondary-button">⚙️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="gameArea" class="hidden">
+            <div id="gameContainer">
+                <div id="p1ChargeBarContainer" class="charge-bar-container">
+                    <div class="charge-bar-outer"><div id="p1ChargeBarInner" class="charge-bar-inner"></div></div>
+                </div>
+                <div id="p2ChargeBarContainer" class="charge-bar-container">
+                    <div class="charge-bar-outer"><div id="p2ChargeBarInner" class="charge-bar-inner"></div></div>
+                </div>
+
+                <div id="scoreDisplay" class="hidden"></div>
+                <div id="objectiveDisplay" class="hidden"></div>
+                <div id="rallyDisplay" class="hidden">0</div>
+                <div id="powerShotText">POWER SHOT!</div>
+                <div id="curveShotText">CURVE SHOT!</div>
+                <div id="powerCurveShotText">POWER CURVE!</div>
+                <div id="draftText">DRAFT!</div>
+                <div id="fpsDisplay" class="hidden">60 FPS</div>
+                <div id="speedDisplay" class="hidden">0 KM/H</div>
+                
+                <div id="inGameControls" class="hidden">
+                    <button id="inGameSettingsButton" title="Settings">⚙️</button>
+                    <button id="pauseButton" title="Pause Game (P)">❚❚</button>
+                    <button id="resetGameButton" title="Reset Match">⟳</button>
+                    <button id="inGameExitButton" title="Exit to Menu">×</button>
+                </div>
+                <canvas id="gameCanvas"></canvas>
+                <div id="messageOverlay">
+                    <div id="messageText"></div>
+                    <div class="button-row" id="messageButtons" style="margin-top: 2rem; position: relative; z-index: 2;"></div>
+                    <div id="confettiContainer"></div>
+                </div>
+
+                <div id="mobileControlsP1" class="mobile-controls-container p1 hidden">
+                    <div class="special-controls">
+                        <button id="mobileCurveBtnP1">🌀</button>
+                        <button id="mobilePowerBtnP1">🔥</button>
+                    </div>
+                    <div class="move-controls">
+                        <button id="mobileUpBtnP1">▲</button>
+                        <button id="mobileDownBtnP1">▼</button>
+                    </div>
+                </div>
+                <div id="mobileControlsP2" class="mobile-controls-container p2 hidden">
+                     <div class="move-controls">
+                        <button id="mobileUpBtnP2">▲</button>
+                        <button id="mobileDownBtnP2">▼</button>
+                    </div>
+                    <div class="special-controls">
+                        <button id="mobileCurveBtnP2">🌀</button>
+                        <button id="mobilePowerBtnP2">🔥</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- DOM Elements ---
+        const body = document.body;
+        const docRoot = document.documentElement;
+        const backgroundOverlay = document.getElementById('background-overlay');
+        const contentWrapper = document.getElementById('contentWrapper');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
+        const tutorialPromptModal = document.getElementById('tutorialPromptModal');
+        const tutorialYesButton = document.getElementById('tutorialYesButton');
+        const tutorialNoButton = document.getElementById('tutorialNoButton');
+        const detailedTutorialModal = document.getElementById('detailedTutorialModal');
+        const closeTutorialButton = document.getElementById('closeTutorialButton');
+        const closeTutorialButtonX = document.getElementById('closeTutorialButtonX');
+        const updateLogModal = document.getElementById('updateLogModal');
+        const updateLogButton = document.getElementById('updateLogButton');
+        const closeUpdateLogButton = document.getElementById('closeUpdateLogButton');
+        const closeUpdateLogButtonX = document.getElementById('closeUpdateLogButtonX');
+        const instructionsButton = document.getElementById('instructionsButton');
+        const aiInfoModal = document.getElementById('aiInfoModal');
+        const aiInfoButton = document.getElementById('aiInfoButton');
+        const closeAiInfoButton = document.getElementById('closeAiInfoButton');
+        const closeAiInfoButtonX = document.getElementById('closeAiInfoButtonX');
+        const exitConfirmModal = document.getElementById('exitConfirmModal');
+        const confirmExitBtn = document.getElementById('confirmExitBtn');
+        const cancelExitBtn = document.getElementById('cancelExitBtn');
+        const resetConfirmModal = document.getElementById('resetConfirmModal');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        const homeScreen = document.getElementById('homeScreen');
+        const gameArea = document.getElementById('gameArea');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const objectiveDisplay = document.getElementById('objectiveDisplay');
+        const rallyDisplay = document.getElementById('rallyDisplay');
+        const powerShotText = document.getElementById('powerShotText');
+        const curveShotText = document.getElementById('curveShotText');
+        const powerCurveShotText = document.getElementById('powerCurveShotText');
+        const draftText = document.getElementById('draftText');
+        const inGameControls = document.getElementById('inGameControls');
+        const pauseButton = document.getElementById('pauseButton');
+        const resetGameButton = document.getElementById('resetGameButton');
+        const inGameExitButton = document.getElementById('inGameExitButton');
+        const startGameButton = document.getElementById('startGameButton');
+        const vsAiButton = document.getElementById('vsAiButton');
+        const trainingButton = document.getElementById('trainingButton');
+        const multiplayerButton = document.getElementById('multiplayerButton');
+        const modeCards = [vsAiButton, trainingButton, multiplayerButton];
+        const aiDifficultySelection = document.getElementById('aiDifficultySelection');
+        const difficultyButtons = document.querySelectorAll('.difficulty-button');
+        const aiScoreSelection = document.getElementById('aiScoreSelection');
+        const aiScoreButtons = document.querySelectorAll('.ai-score-button');
+        const trainingOptionsSelection = document.getElementById('trainingOptionsSelection');
+        const trainingButtons = document.querySelectorAll('.training-button');
+        const multiplayerScoreSelection = document.getElementById('multiplayerScoreSelection');
+        const mpScoreButtons = document.querySelectorAll('.mp-score-button');
+        const customScoreSlider = document.getElementById('customScoreSlider');
+        const customScoreValue = document.getElementById('customScoreValue');
+        const trainingHighScoreDisplay = document.getElementById('trainingHighScoreDisplay');
+        const vsAiHighScoreDisplay = document.getElementById('vsAiHighScoreDisplay');
+        const multiplayerHighScoreDisplay = document.getElementById('multiplayerHighScoreDisplay');
+        const messageOverlay = document.getElementById('messageOverlay');
+        const messageText = document.getElementById('messageText');
+        const messageButtons = document.getElementById('messageButtons');
+        const confettiContainer = document.getElementById('confettiContainer');
+        const homeInstructionText = document.getElementById('homeInstructionText');
+        
+        // Mobile Controls
+        const mobileControlsP1 = document.getElementById('mobileControlsP1');
+        const mobileUpBtnP1 = document.getElementById('mobileUpBtnP1');
+        const mobileDownBtnP1 = document.getElementById('mobileDownBtnP1');
+        const mobilePowerBtnP1 = document.getElementById('mobilePowerBtnP1');
+        const mobileCurveBtnP1 = document.getElementById('mobileCurveBtnP1');
+        const mobileControlsP2 = document.getElementById('mobileControlsP2');
+        const mobileUpBtnP2 = document.getElementById('mobileUpBtnP2');
+        const mobileDownBtnP2 = document.getElementById('mobileDownBtnP2');
+        const mobilePowerBtnP2 = document.getElementById('mobilePowerBtnP2');
+        const mobileCurveBtnP2 = document.getElementById('mobileCurveBtnP2');
+        
+        // Charge Bar DOM elements
+        const p1ChargeBarContainer = document.getElementById('p1ChargeBarContainer');
+        const p1ChargeBarInner = document.getElementById('p1ChargeBarInner');
+        const p2ChargeBarContainer = document.getElementById('p2ChargeBarContainer');
+        const p2ChargeBarInner = document.getElementById('p2ChargeBarInner');
+
+        // === NEW/MODIFIED: Settings and In-Game UI Elements ===
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsButton = document.getElementById('settingsButton');
+        const inGameSettingsButton = document.getElementById('inGameSettingsButton');
+        const closeSettingsButton = document.getElementById('closeSettingsButton');
+        const closeSettingsButtonX = document.getElementById('closeSettingsButtonX');
+        const sfxVolumeSlider = document.getElementById('sfxVolumeSlider');
+        const sfxVolumeValue = document.getElementById('sfxVolumeValue');
+        const musicToggle = document.getElementById('musicToggle');
+        const extraEffectsToggle = document.getElementById('extraEffectsToggle');
+        const bgAnimationToggle = document.getElementById('bgAnimationToggle');
+        const ballTrailToggle = document.getElementById('ballTrailToggle');
+        const fpsToggle = document.getElementById('fpsToggle');
+        const vfxSlider = document.getElementById('vfxSlider');
+        const vfxValue = document.getElementById('vfxValue');
+        const p1ColorPicker = document.getElementById('p1ColorPicker');
+        const p1ColorReset = document.getElementById('p1ColorReset');
+        const p2ColorPicker = document.getElementById('p2ColorPicker');
+        const p2ColorReset = document.getElementById('p2ColorReset');
+        const ballColorPicker = document.getElementById('ballColorPicker');
+        const ballColorReset = document.getElementById('ballColorReset');
+        const fpsDisplay = document.getElementById('fpsDisplay');
+        const speedDisplay = document.getElementById('speedDisplay'); 
+
+        // Audio Elements
+        const bgMusic = document.getElementById('bgMusic');
+        const powerShotWooshSound = document.getElementById('powerShotWooshSound');
+        const curveShotSound = document.getElementById('curveShotSound');
+        const powerCurveShotSound = document.getElementById('powerCurveShotSound');
+        const chargeSound = document.getElementById('chargeSound');
+        const draftSound = document.getElementById('draftSound');
+        const uiCloseSound = document.getElementById('uiCloseSound');
+        const uiClickSound = document.getElementById('uiClickSound');
+        const newHighScoreSound = document.getElementById('newHighScoreSound');
+        const cheerSound = document.getElementById('cheerSound');
+        const uiContinueSound = document.getElementById('uiContinueSound');
+        const uiHoverSound = document.getElementById('uiHoverSound');
+        
+        const allSfx = [powerShotWooshSound, curveShotSound, powerCurveShotSound, chargeSound, draftSound, uiCloseSound, uiClickSound, newHighScoreSound, cheerSound, uiContinueSound, uiHoverSound];
+        bgMusic.volume = 0.15;
+
+        // === NEW/MODIFIED: Settings & State Variables ===
+        let sfxVolume = 1.0, bgMusicEnabled = true, extraEffectsEnabled = true, showFPS = true, vfxIntensity = 0.5, bgAnimationEnabled = true, ballTrailEnabled = true;
+        let p1PaddleColor = '#FBBF24', p2PaddleColor = '#9f55ff', ballColor = '#FFFFFF';
+        const DEFAULT_P1_COLOR = '#FBBF24', DEFAULT_P2_COLOR = '#9f55ff', DEFAULT_BALL_COLOR = '#FFFFFF';
+        let animationLoopId;
+        let lastTime = 0, deltaTime = 0;
+
+        // --- Game Constants & State ---
+        const PADDLE_HEIGHT_RATIO = 0.18, PADDLE_WIDTH_RATIO = 0.02, BALL_RADIUS_RATIO = 0.01;
+        const DEFAULT_WINNING_SCORE = 5;
+        let selectedWinningScore = null;
+        const POWER_SHOT_MULTIPLIER = 1.9, CURVE_SHOT_SPEED_MULTIPLIER = 1.5, POWER_CURVE_SPEED_MULTIPLIER = 1.8;
+        const CURVE_MAGNITUDE_MULTIPLIER = 1.5, POWER_CURVE_CURVE_MULTIPLIER = 1.8; 
+        const POWER_SHOT_CHAIN_BONUS = 0.05, CURVE_SHOT_CHAIN_BONUS = 0.1;
+        const POWER_CURVE_MAX_CHARGE_TIME = 2000; 
+        const POWER_CURVE_TIMING_WINDOW = 250; // ms
+        const POWER_CURVE_TIMING_OFFSET = 300; // ms
+        const DRAFT_CHANCE = 0.08, DRAFT_SPEED_BOOST = 1.5;
+
+        let PADDLE_HEIGHT, PADDLE_WIDTH, BALL_RADIUS;
+        let player1Y, player2Y, ballX, ballY, ballSpeedX, ballSpeedY, oldBallX, oldBallY;
+        let ballCurveMagnitude = 0, lastSpecialShotType = null, ballTrail = [];
+        
+        let player1Score = 0, player2Score = 0, objectiveProgress = 0, currentRally = 0, maxRallyThisMatch = 0;
+        let gameRunning = false, isPaused = false, animationFrameId, isWaitingToServe = false;
+        let currentScreen = 'tutorial_prompt', gameMode = null, aiDifficulty = null, trainingSubType = null;
+        let p1DisplayName, p2DisplayName;
+        let player1KeyPaddleSpeed, player2KeyPaddleSpeed, aiPaddleSpeed;
+        let keysPressed = {}, p1MobileControl = { up: false, down: false, power: false, curve: false }, p2MobileControl = { up: false, down: false, power: false, curve: false };
+        let powerShotChain = 0, curveShotChain = 0;
+        let aiWantsPower = false, aiWantsCurve = false; 
+        let trainingHighScore = 0, vsAiRallyHighScore = 0, multiplayerRallyHighScore = 0;
+        let trainingCoursesCompleted = [], aiDifficultiesCompleted = [];
+        let courseObjectiveMet = false;
+        let advancedCoursePowerHits = 0;
+        let gradientAnimationTime = 0;
+        let themeColors = {};
+        let particles = [];
+        let preGameModalOpen = false;
+
+        // Power Curve Charge State
+        let p1IsCharging = false, p1ChargeStartTime = 0, p1PrimedCharge = 0, p1ChargeLevel = 0;
+        let p2IsCharging = false, p2ChargeStartTime = 0, p2PrimedCharge = 0, p2ChargeLevel = 0;
+        let p1InTimingWindow = false, p2InTimingWindow = false;
+
+        // FPS Counter State
+        let frameCount = 0;
+        let lastFpsUpdate = 0;
+
+        const aiThemes = { 
+            veryeasy: { bgStart: '#4ade80', bgEnd: '#15803d', hotspot: '#86efac', p1Color: p1PaddleColor, p2Color: '#e0f2fe', ballColor: ballColor, net: 'rgba(134, 239, 172, 0.2)', glow: '#22c55e' },
+            easy:     { bgStart: '#7dd3fc', bgEnd: '#0369a1', hotspot: '#a5f3fc', p1Color: p1PaddleColor, p2Color: '#e0f2fe', ballColor: ballColor, net: 'rgba(125, 211, 252, 0.2)', glow: '#0ea5e9' },
+            medium:   { bgStart: '#fbbf24', bgEnd: '#b45309', hotspot: '#fcd34d', p1Color: p1PaddleColor, p2Color: '#e0f2fe', ballColor: ballColor, net: 'rgba(253, 224, 71, 0.25)', glow: '#f59e0b' },
+            hard:     { bgStart: '#f97316', bgEnd: '#dc2626', hotspot: '#fb923c', p1Color: p1PaddleColor, p2Color: '#fecaca', ballColor: ballColor, net: 'rgba(251, 146, 60, 0.25)', glow: '#f97316' },
+            veryhard: { bgStart: '#f97316', bgEnd: '#4c1d95', hotspot: '#ef4444', p1Color: p1PaddleColor, p2Color: '#d1d5db', ballColor: ballColor, net: 'rgba(239, 68, 68, 0.25)', glow: '#dc2626' },
+            demonic:  { bgStart: '#1e293b', bgEnd: '#4c1d95', drip1: '#7e22ce', drip2: '#b91c1c', p1Color: p1PaddleColor, p2Color: '#fca5a5', ballColor: ballColor, net: 'rgba(216, 180, 254, 0.25)', glow: '#9333ea' }
+        };
+        
+        let audioCtx;
+        const playSound = (freq, dur, type, vol = 0.25) => {
+            if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state !== 'running') return;
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol * sfxVolume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+            osc.start(); osc.stop(audioCtx.currentTime + dur);
+        };
+        const playUiSound = (soundElement) => { if(soundElement) { soundElement.currentTime = 0; soundElement.volume = sfxVolume; soundElement.play().catch(e => {}); } };
+
+        const triggerSubtleHitGlow = () => {
+            if (vfxIntensity < 0.2) return;
+            gameContainer.classList.add('subtle-hit-glow');
+            setTimeout(() => gameContainer.classList.remove('subtle-hit-glow'), 150);
+        };
+
+        const triggerBackgroundPulse = (color) => {
+            if (vfxIntensity < 0.3 || !extraEffectsEnabled) return;
+            gameContainer.style.setProperty('--pulse-color', color);
+            gameContainer.classList.add('bg-pulse');
+            setTimeout(() => {
+                gameContainer.classList.remove('bg-pulse');
+            }, 800);
+        };
+
+        const paddleHitSound = () => { playSound(440, 0.05, 'sine'); triggerSubtleHitGlow(); };
+        const wallHitSound = () => { playSound(220, 0.05, 'square'); triggerSubtleHitGlow(); };
+        const scoreSound = () => playSound(880, 0.1, 'triangle'); 
+        const powerShotImpactSound = () => playSound(660, 0.08, 'sawtooth');
+        const goBeep = () => playSound(1046.50, 0.7, 'sine', 0.5);
+        
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type;
+                let angle, speed, colors;
+                this.decay = 0.95;
+                
+                switch(type) {
+                    case 'fire':
+                        colors = ['#ff4500', '#ffa500', '#ffd700', '#ff6347'];
+                        angle = Math.random() * Math.PI * 2;
+                        speed = Math.random() * 3 + 1;
+                        this.vx = Math.cos(angle) * speed;
+                        this.vy = Math.sin(angle) * speed - 2;
+                        break;
+                    case 'ice':
+                        colors = ['#00bfff', '#87ceeb', '#afeeee', '#ffffff'];
+                        angle = Math.random() * Math.PI * 2;
+                        speed = Math.random() * 3 + 1;
+                        this.vx = Math.cos(angle) * speed * 1.5;
+                        this.vy = Math.sin(angle) * speed;
+                        break;
+                    case 'draft':
+                        colors = ['#e5e7eb', '#d1d5db', '#ffffff', '#9ca3af'];
+                        angle = Math.random() * Math.PI * 0.4 - Math.PI * 0.2; // Tighter cone behind ball
+                        speed = Math.random() * 6 + 4; // Faster particles
+                        this.vx = Math.cos(angle) * speed * (ballSpeedX > 0 ? -1 : 1);
+                        this.vy = Math.sin(angle) * speed;
+                        this.decay = 0.92; // Last longer
+                        break;
+                    default: // power-curve
+                        colors = ['#ff4500', '#c71585', '#00bfff', '#a020f0', '#ffffff'];
+                        angle = Math.random() * Math.PI * 2;
+                        speed = Math.random() * 3 + 1;
+                        this.vx = Math.cos(angle) * speed * 1.2;
+                        this.vy = Math.sin(angle) * speed * 1.2;
+                        break;
+                }
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.life = Math.random() * 35 + 15;
+                this.size = Math.random() * 5 + 2;
+            }
+            update(dt) {
+                const dtFactor = dt / (1000 / 60); // Normalize to 60fps
+                this.x += this.vx * dtFactor; this.y += this.vy * dtFactor;
+                this.life -= dtFactor; 
+                this.size *= this.decay;
+            }
+            draw(ctx) {
+                if (this.life > 0 && this.size > 0.5) {
+                    ctx.save();
+                    ctx.globalAlpha = this.life / 40;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        function createParticles(x, y, baseCount, type) {
+            if (vfxIntensity === 0) return;
+            const count = Math.round(baseCount * vfxIntensity);
+            for (let i = 0; i < count; i++) particles.push(new Particle(x, y, type));
+        }
+
+        function updateAndDrawParticles(dt) {
+            if (vfxIntensity === 0) { particles = []; return; }
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update(dt);
+                if (p.life <= 0 || p.size <= 0.5) {
+                    particles.splice(i, 1);
+                } else {
+                    p.draw(ctx);
+                }
+            }
+        }
+
+        function triggerConfetti(baseCount = 100) {
+            if (vfxIntensity === 0) return;
+            messageOverlay.classList.add('celebrate');
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#2196f3', '#00bcd4', '#4caf50', '#ffeb3b', '#ff9800'];
+            let html = '';
+            const confettiCount = Math.round(baseCount * vfxIntensity);
+            for(let i=0; i<confettiCount; i++) {
+                const style = `
+                    background: ${colors[i % colors.length]};
+                    left: ${Math.random() * 100}%;
+                    animation-delay: ${Math.random() * 3}s;
+                    transform: rotate(${Math.random() * 360}deg);
+                `;
+                html += `<i style="${style}" class="confetti-piece"></i>`;
+            }
+            confettiContainer.innerHTML = html;
+        }
+
+        function hexToRgba(hex, alpha) {
+            let r=0,g=0,b=0; if(hex.length==4){r="0x"+hex[1]+hex[1];g="0x"+hex[2]+hex[2];b="0x"+hex[3]+hex[3];}else if(hex.length==7){r="0x"+hex[1]+hex[2];g="0x"+hex[3]+hex[4];b="0x"+hex[5]+hex[6];} return `rgba(${+r},${+g},${+b},${alpha})`;
+        }
+
+        function updateCompletedChecks() {
+            trainingCoursesCompleted.forEach(courseId => {
+                const button = document.querySelector(`#training-${courseId}`);
+                if (button) {
+                    button.classList.add('completed');
+                    const checkmark = button.querySelector('.progress-check');
+                    if(checkmark) checkmark.classList.remove('hidden');
+                }
+            });
+            aiDifficultiesCompleted.forEach(difficultyId => {
+                 const button = document.getElementById(`${difficultyId}Button`);
+                 if(button) button.classList.add('completed');
+            });
+        }
+        
+        function updateInstructionalText() {
+            let text = '';
+            const startEnabled = startGameButton.disabled === false;
+            
+            if (startEnabled) {
+                text = "Ready! Press Start Game";
+            } else if (!gameMode) {
+                text = "Select a Game Mode";
+            } else if (gameMode === 'ai') {
+                if (!selectedWinningScore) {
+                    text = "Select a Score to Play To";
+                } else if (!aiDifficulty) {
+                    text = "Select an AI Difficulty";
+                }
+            } else if (gameMode === 'training') {
+                if (!trainingSubType) {
+                    text = "Select a Training Mode";
+                }
+            } else if (gameMode === 'multiplayer') {
+                 if (!selectedWinningScore) {
+                    text = "Select a Score to Play To";
+                }
+            }
+            
+            if (homeInstructionText.textContent !== text) {
+                homeInstructionText.classList.remove('fade-in');
+                void homeInstructionText.offsetWidth; // Trigger reflow
+                homeInstructionText.textContent = text;
+                homeInstructionText.classList.add('fade-in');
+            }
+        }
+
+        // NEW: Helper function to trigger a shake animation on a UI element
+        function triggerUiShake(element) {
+            if (!element || vfxIntensity < 0.5 || !extraEffectsEnabled) return;
+            element.classList.add('ui-shake');
+            setTimeout(() => element.classList.remove('ui-shake'), 200);
+        }
+
+        function showScreen(screenName, isModal = false) {
+            const allModals = [tutorialPromptModal, detailedTutorialModal, updateLogModal, aiInfoModal, exitConfirmModal, resetConfirmModal, settingsModal];
+
+            const inGameOverlayScreens = ['exit_confirm', 'reset_confirm'];
+            if (inGameOverlayScreens.includes(screenName)) {
+                const screenMap = { 'exit_confirm': exitConfirmModal, 'reset_confirm': resetConfirmModal };
+                const modalToShow = screenMap[screenName];
+                if (modalToShow) {
+                    messageOverlay.classList.remove('visible');
+                    modalToShow.classList.remove('hidden');
+                }
+                return; 
+            }
+
+            if (isModal) {
+                const modalMap = {'tutorial_detailed': detailedTutorialModal, 'ai_info': aiInfoModal, 'update_log': updateLogModal, 'settings': settingsModal };
+                if(modalMap[screenName]) {
+                     allModals.forEach(el => el.classList.add('hidden'));
+                     modalMap[screenName].classList.remove('hidden');
+                     preGameModalOpen = true; 
+                }
+                return;
+            }
+
+            currentScreen = screenName;
+            preGameModalOpen = false;
+            allModals.forEach(el => el.classList.add('hidden'));
+            homeScreen.classList.add('hidden');
+            gameArea.classList.add('hidden');
+            
+            inGameControls.classList.add('hidden');
+            mobileControlsP1.classList.add('hidden');
+            mobileControlsP2.classList.add('hidden');
+            messageOverlay.classList.remove('visible', 'new-highscore-glow');
+            backgroundOverlay.classList.remove('visible');
+            
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+            if (screenName === 'home') {
+                contentWrapper.style.justifyContent = 'center';
+                homeScreen.classList.remove('hidden');
+                backgroundOverlay.classList.add('visible');
+                
+                aiScoreSelection.classList.toggle('hidden', gameMode !== 'ai');
+                aiDifficultySelection.classList.toggle('hidden', gameMode !== 'ai' || !selectedWinningScore);
+                trainingOptionsSelection.classList.toggle('hidden', gameMode !== 'training');
+                multiplayerScoreSelection.classList.toggle('hidden', gameMode !== 'multiplayer');
+
+                const startEnabled = (gameMode === 'ai' && aiDifficulty && selectedWinningScore) || 
+                                     (gameMode === 'training' && trainingSubType) || 
+                                     (gameMode === 'multiplayer' && selectedWinningScore);
+                startGameButton.disabled = !startEnabled;
+
+                updateInstructionalText();
+                updateStartButtonAppearance();
+                updateAllHighScoreDisplays();
+                updateCompletedChecks();
+
+            } else { 
+                contentWrapper.style.justifyContent = 'center';
+                if (screenName === 'game') {
+                    gameArea.classList.remove('hidden');
+                    speedDisplay.classList.remove('hidden');
+                    if (gameRunning) {
+                        inGameControls.classList.remove('hidden');
+                        if(isTouchDevice) {
+                            if (gameMode !== 'multiplayer') mobileControlsP1.classList.remove('hidden');
+                            if (gameMode === 'multiplayer') {
+                               mobileControlsP1.classList.remove('hidden');
+                               mobileControlsP2.classList.remove('hidden');
+                            }
+                        }
+                    }
+                } else { 
+                    const screenMap = { 'tutorial_prompt': tutorialPromptModal };
+                    if (screenMap[screenName]) screenMap[screenName].classList.remove('hidden');
+                }
+            }
+        }
+
+        function resizeCanvas() {
+            let containerWidth = gameContainer.clientWidth;
+            if (containerWidth === 0) containerWidth = Math.min(1800, window.innerWidth);
+            const aspectRatio = 16 / 9;
+            let newHeight = containerWidth / aspectRatio;
+            const maxAllowedHeight = window.innerHeight * 0.9;
+            if (newHeight > maxAllowedHeight) { newHeight = maxAllowedHeight; containerWidth = newHeight * aspectRatio; }
+            canvas.width = containerWidth; canvas.height = newHeight;
+            PADDLE_HEIGHT = canvas.height * PADDLE_HEIGHT_RATIO;
+            PADDLE_WIDTH = Math.max(10, canvas.width * PADDLE_WIDTH_RATIO);
+            BALL_RADIUS = Math.max(5, canvas.height * BALL_RADIUS_RATIO);
+            
+            const baseSpeedPerSecond = canvas.height * 0.75; // Slower paddle to match ball
+            player1KeyPaddleSpeed = baseSpeedPerSecond; 
+            player2KeyPaddleSpeed = baseSpeedPerSecond;
+            if (gameMode === 'ai' && aiDifficulty) setAiSpeed();
+            if (!gameRunning) { resetGameElements(); draw(); }
+        }
+
+        function setAiSpeed() {
+            const base = canvas.height * 0.5; 
+            const speeds = { veryeasy: 0.2, easy: 0.4, medium: 0.65, hard: 1.35, veryhard: 1.70, demonic: 2.8 };
+            aiPaddleSpeed = base * (speeds[aiDifficulty] || 0.9);
+        }
+
+        function setTheme() {
+            const rootStyle = getComputedStyle(document.documentElement);
+            Object.keys(aiThemes).forEach(key => {
+                aiThemes[key].p1Color = p1PaddleColor;
+                aiThemes[key].ballColor = ballColor;
+            });
+            
+            if (gameMode === 'ai' && aiDifficulty && aiThemes[aiDifficulty]) {
+                const baseTheme = aiThemes[aiDifficulty];
+                themeColors = { ...baseTheme, p2Color: p2PaddleColor, ballColor: ballColor };
+            } else if (gameMode === 'training') {
+                const difficultyMap = { beginner: 'veryeasy', medium: 'easy', advanced: 'medium', expert: 'hard', master: 'demonic' };
+                const themeKey = difficultyMap[trainingSubType];
+                if (themeKey && aiThemes[themeKey]) {
+                    const theme = aiThemes[themeKey];
+                    themeColors = { ...theme, p1Color: p1PaddleColor, p2Color: '#ffffff', ballColor: ballColor, netColor: 'rgba(0,0,0,0)', tableText: rootStyle.getPropertyValue('--train-table-text'), tableGlow: p1PaddleColor };
+                } else { 
+                    themeColors = {
+                        bgStart: rootStyle.getPropertyValue(`--train-bg-start`), bgEnd: rootStyle.getPropertyValue(`--train-bg-end`), p1Color: p1PaddleColor,
+                        p2Color: '#ffffff', ballColor: ballColor, netColor: 'rgba(0,0,0,0)', tableText: rootStyle.getPropertyValue('--train-table-text'), tableGlow: rootStyle.getPropertyValue('--train-table-text-glow'),
+                    };
+                }
+            } else { // Multiplayer
+                themeColors = {
+                    bgStart: rootStyle.getPropertyValue(`--mp-bg-start`), bgEnd: rootStyle.getPropertyValue(`--mp-bg-end`), p1Color: p1PaddleColor, p2Color: p2PaddleColor,
+                    ballColor: ballColor, netColor: rootStyle.getPropertyValue(`--mp-net`),
+                };
+            }
+        }
+
+        function resetGameElements(fullReset = true) {
+            if (fullReset) {
+                player1Score = 0; player2Score = 0; objectiveProgress = 0; maxRallyThisMatch = 0; courseObjectiveMet = false; advancedCoursePowerHits = 0; 
+                if(objectiveDisplay) { objectiveDisplay.style.color = 'var(--accent-yellow)'; objectiveDisplay.style.textShadow = '0 0 8px var(--accent-yellow)'; }
+            }
+            powerShotChain = 0; curveShotChain = 0; particles = [];
+            player1Y = canvas.height / 2 - PADDLE_HEIGHT / 2;
+            player2Y = canvas.height / 2 - PADDLE_HEIGHT / 2;
+            
+            p1IsCharging = false; p1PrimedCharge = 0; p1ChargeLevel = 0; p1InTimingWindow = false;
+            p2IsCharging = false; p2PrimedCharge = 0; p2ChargeLevel = 0; p2InTimingWindow = false;
+            updateChargeBar(1, 0);
+            updateChargeBar(2, 0);
+
+            resetBall();
+        }
+
+        function resetBall() {
+            isWaitingToServe = true; currentRally = 0; 
+            ballCurveMagnitude = 0; lastSpecialShotType = null; ballTrail = [];
+            powerShotChain = 0; curveShotChain = 0;
+            aiWantsPower = false; aiWantsCurve = false;
+
+            if (p1IsCharging || p2IsCharging) {
+                 chargeSound.pause();
+            }
+            p1IsCharging = false; p1PrimedCharge = 0; p1ChargeLevel = 0; p1InTimingWindow = false; p1ChargeBarInner.classList.remove('perfect-charge');
+            p2IsCharging = false; p2PrimedCharge = 0; p2ChargeLevel = 0; p2InTimingWindow = false; p2ChargeBarInner.classList.remove('perfect-charge');
+            updateChargeBar(1, 0);
+            updateChargeBar(2, 0);
+
+            if (gameMode === 'training' && ['advanced', 'expert', 'master'].includes(trainingSubType)) objectiveProgress = 0;
+            rallyDisplay.classList.add('hidden');
+            ballX = canvas.width / (gameMode === 'training' ? 4 : 2); ballY = canvas.height / 2; oldBallX = ballX; oldBallY = ballY;
+            
+            let baseSpeed = canvas.width * 0.175; // HALVED
+            if (gameMode === 'training') {
+                isWaitingToServe = false;
+                const speeds = { free: 0.275, beginner: 0.125, medium: 0.16, advanced: 0.21, expert: 0.24, master: 0.25 };
+                baseSpeed = (speeds[trainingSubType] || 0.175) * canvas.width;
+            }
+            
+            ballSpeedX = (Math.random() > 0.5 || gameMode === 'training' ? baseSpeed : -baseSpeed);
+            const ySpeedMagnitude = canvas.height * (0.1 + Math.random() * 0.2); // HALVED
+            ballSpeedY = Math.random() > 0.5 ? ySpeedMagnitude : -ySpeedMagnitude;
+            if (gameMode === 'training' && trainingSubType !== 'free' && Math.abs(ballSpeedY) < (canvas.height * 0.125)) ballSpeedY = Math.sign(ballSpeedY || 1) * canvas.height * 0.125;
+
+            updateSpeedDisplay();
+        }
+        
+        function drawTableMarkings() {
+            if (!extraEffectsEnabled) return;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.lineWidth = 2;
+
+            const halfWidth = canvas.width / 2;
+            
+            for (let i = 1; i <= 3; i++) {
+                const xPos = halfWidth * (i * 0.25);
+                ctx.beginPath();
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let i = 1; i <= 3; i++) {
+                const xPos = halfWidth + (halfWidth * (i * 0.25));
+                ctx.beginPath();
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, canvas.height);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawPaddles() {
+            const drawPaddleAndAura = (x, y, color, isPlayer1) => {
+                const isSinglePlayer = gameMode !== 'multiplayer';
+                const p1Power = keysPressed['d'] || (isSinglePlayer && keysPressed['arrowright']) || p1MobileControl.power;
+                const p1Curve = keysPressed['a'] || (isSinglePlayer && keysPressed['arrowleft']) || p1MobileControl.curve;
+                const p2Power = gameMode === 'multiplayer' && (keysPressed['arrowright'] || p2MobileControl.power);
+                const p2Curve = gameMode === 'multiplayer' && (keysPressed['arrowleft'] || p2MobileControl.curve);
+
+                let auraColor = null;
+                if(isPlayer1) {
+                    if(p1IsCharging || p1PrimedCharge > 0) auraColor = 'rgba(159, 85, 255, 0.7)'; // Power-Curve (Purple)
+                    else if(p1Power) auraColor = 'rgba(255, 100, 0, 0.7)'; // Power (Fire)
+                    else if(p1Curve) auraColor = 'rgba(0, 180, 255, 0.7)'; // Curve (Ice)
+                } else { // Player 2
+                     if(p2IsCharging || p2PrimedCharge > 0) auraColor = 'rgba(159, 85, 255, 0.7)';
+                     else if(p2Power) auraColor = 'rgba(255, 100, 0, 0.7)';
+                     else if(p2Curve) auraColor = 'rgba(0, 180, 255, 0.7)';
+                }
+                
+                if (auraColor && vfxIntensity > 0) {
+                    ctx.save();
+                    ctx.fillStyle = auraColor;
+                    ctx.shadowColor = auraColor;
+                    ctx.shadowBlur = 25 * vfxIntensity;
+                    ctx.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+                    ctx.restore();
+                }
+
+                ctx.save();
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+                ctx.restore();
+
+                const grad = ctx.createLinearGradient(x, 0, x + PADDLE_WIDTH, 0);
+                if (isPlayer1) {
+                    grad.addColorStop(0,"rgba(255,255,255,0.2)"); grad.addColorStop(0.5,"rgba(255,255,255,0)"); grad.addColorStop(1,"rgba(0,0,0,0.3)");
+                } else {
+                    grad.addColorStop(0,"rgba(0,0,0,0.3)"); grad.addColorStop(0.5,"rgba(255,255,255,0)"); grad.addColorStop(1,"rgba(255,255,255,0.2)");
+                }
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
+            };
+            
+            drawPaddleAndAura(PADDLE_WIDTH * 0.5, player1Y, themeColors.p1Color, true);
+            if (gameMode !== 'training') {
+                drawPaddleAndAura(canvas.width - PADDLE_WIDTH * 1.5, player2Y, themeColors.p2Color, false);
+            }
+        }
+
+        function drawServingBox() {
+            const boxSize = canvas.height * 0.15; const boxX = ballX - boxSize / 2; const boxY = ballY - boxSize / 2;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.strokeRect(boxX, boxY, boxSize, boxSize); ctx.setLineDash([]);
+            const arrowLength = boxSize * 0.25, arrowHeadSize = boxSize * 0.08, dir = Math.sign(ballSpeedX);
+            const startX = ballX - (arrowLength / 2) * dir, endX = ballX + (arrowLength / 2) * dir;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(startX, ballY); ctx.lineTo(endX, ballY); ctx.lineTo(endX - arrowHeadSize * dir, ballY - arrowHeadSize); ctx.moveTo(endX, ballY); ctx.lineTo(endX - arrowHeadSize * dir, ballY + arrowHeadSize); ctx.stroke();
+        }
+        
+        function drawBallAndTrail() {
+            if (ballTrailEnabled && vfxIntensity > 0) {
+                let lastPoint = {x: ballX, y: ballY};
+                for (let i = ballTrail.length - 1; i >= 0; i--) {
+                    const pos = ballTrail[i];
+                    const trailAlpha = (i / ballTrail.length) * 0.5;
+                    const trailSize = (i / ballTrail.length) * BALL_RADIUS;
+                    
+                    let strokeStyle;
+                    if (lastSpecialShotType === 'fire') strokeStyle = `rgba(255, 165, 0, ${trailAlpha})`;
+                    else if (lastSpecialShotType === 'ice') strokeStyle = `rgba(0, 206, 209, ${trailAlpha})`;
+                    else if (lastSpecialShotType === 'draft') strokeStyle = `rgba(209, 213, 219, ${trailAlpha * 1.5})`;
+                    else if (lastSpecialShotType === 'power-curve') {
+                         const pulse = (Math.sin(Date.now() * 0.02) + 1) / 2; 
+                         const r = 255 * (1 - pulse) + 0 * pulse;
+                         const g = 69 * (1 - pulse) + 206 * pulse;
+                         const b = 0 * (1-pulse) + 209 * pulse;
+                         strokeStyle = `rgba(${r}, ${g}, ${b}, ${trailAlpha * 1.5})`;
+                    } else {
+                        strokeStyle = `rgba(255, 255, 255, ${trailAlpha * 0.5})`;
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(lastPoint.x, lastPoint.y);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.lineWidth = trailSize * 2;
+                    ctx.strokeStyle = strokeStyle;
+                    ctx.stroke();
+
+                    lastPoint = pos;
+                }
+                 ctx.lineWidth = 1; // Reset
+            }
+
+            ctx.save();
+            if (vfxIntensity > 0) {
+                ctx.shadowBlur = 15 * vfxIntensity;
+                ctx.shadowColor = lastSpecialShotType === 'fire' ? 'orange' : (lastSpecialShotType === 'ice' ? 'cyan' : (lastSpecialShotType === 'power-curve' ? '#ee82ee' : (lastSpecialShotType === 'draft' ? '#e5e7eb' : ballColor)));
+            }
+            ctx.fillStyle = themeColors.ballColor;
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, BALL_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        function draw() {
+            if (!ctx || !themeColors.bgStart) { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, canvas.width, canvas.height); return; }
+            
+            ctx.fillStyle = themeColors.bgEnd; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (extraEffectsEnabled) {
+                const grad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width * 0.9);
+                grad.addColorStop(0, themeColors.bgStart); grad.addColorStop(1, themeColors.bgEnd); ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const themeKey = gameMode === 'ai' ? aiDifficulty : (trainingSubType ? trainingSubType : null);
+                if (themeKey === 'demonic' || themeKey === 'master') {
+                    const drip1 = ctx.createRadialGradient(canvas.width*0.2, canvas.height*0.8, 0, canvas.width*0.2, canvas.height*0.8, canvas.width*0.7);
+                    drip1.addColorStop(0, hexToRgba(themeColors.drip1, 0.5)); drip1.addColorStop(1, 'transparent'); ctx.fillStyle = drip1; ctx.fillRect(0,0,canvas.width, canvas.height);
+                    const drip2 = ctx.createRadialGradient(canvas.width*0.8, canvas.height*0.2, 0, canvas.width*0.8, canvas.height*0.2, canvas.width*0.7);
+                    drip2.addColorStop(0, hexToRgba(themeColors.drip2, 0.5)); drip2.addColorStop(1, 'transparent'); ctx.fillStyle = drip2; ctx.fillRect(0,0,canvas.width, canvas.height);
+                } else if (themeKey === 'veryhard') {
+                    const hotspot = ctx.createRadialGradient(canvas.width*0.5, canvas.height*0.5, 0, canvas.width*0.5, canvas.height/2, canvas.width*0.6);
+                    hotspot.addColorStop(0, hexToRgba(themeColors.hotspot, 0.4)); hotspot.addColorStop(1, 'transparent'); ctx.fillStyle = hotspot; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            
+            if (gameMode !== 'training') {
+                drawTableMarkings();
+                ctx.strokeStyle = themeColors.netColor; ctx.lineWidth = Math.max(2, canvas.width / 300);
+                ctx.setLineDash([canvas.height / 25, canvas.height / 25]);
+                ctx.beginPath(); ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            drawPaddles();
+            if (isWaitingToServe && gameMode !== 'training') drawServingBox();
+            updateAndDrawParticles(deltaTime);
+            drawBallAndTrail();
+        }
+        
+        function handleMiss() {
+            let winnerColor;
+            if (ballX < 0) { 
+                player2Score++;
+                winnerColor = themeColors.p2Color;
+            } else { 
+                player1Score++; 
+                winnerColor = themeColors.p1Color;
+            } 
+            maxRallyThisMatch = Math.max(maxRallyThisMatch, currentRally);
+            
+            triggerBackgroundPulse(winnerColor);
+            scoreSound();
+
+            if (gameMode === 'training' && trainingSubType === 'free') {
+                endGame("Rally Over!");
+                return;
+            }
+            updateScoreDisplay();
+            if (checkWin()) return;
+            
+            resetBall();
+            draw();
+            
+            if (gameMode !== 'training') {
+                setTimeout(() => { if (gameRunning && !isPaused) isWaitingToServe = false; }, 1200);
+            } else {
+                updateObjectiveDisplay();
+            }
+        }
+
+        function updateChargeBar(player, chargeLevel) {
+            const container = player === 1 ? p1ChargeBarContainer : p2ChargeBarContainer;
+            const inner = player === 1 ? p1ChargeBarInner : p2ChargeBarInner;
+
+            if (chargeLevel > 0) {
+                container.style.visibility = 'visible';
+                inner.style.height = `${chargeLevel * 100}%`;
+            } else {
+                container.style.visibility = 'hidden';
+                inner.style.height = '0%';
+            }
+        }
+
+        function handlePowerCurveCharge() {
+            const now = Date.now();
+            const isSinglePlayer = gameMode !== 'multiplayer';
+
+            // --- Player 1 Charging Logic ---
+            const p1PowerInput = keysPressed['d'] || (isSinglePlayer && keysPressed['arrowright']) || p1MobileControl.power;
+            const p1CurveInput = keysPressed['a'] || (isSinglePlayer && keysPressed['arrowleft']) || p1MobileControl.curve;
+            const p1ChargingInput = p1PowerInput && p1CurveInput;
+
+            if (p1ChargingInput && !p1IsCharging) { // Start charging
+                p1IsCharging = true;
+                p1ChargeStartTime = now;
+                p1PrimedCharge = 0;
+                if (bgMusicEnabled) { chargeSound.currentTime = 0; chargeSound.play().catch(e=>{}); }
+            }
+
+            if (p1IsCharging) {
+                p1ChargeLevel = Math.min(1, (now - p1ChargeStartTime) / POWER_CURVE_MAX_CHARGE_TIME);
+                updateChargeBar(1, p1ChargeLevel);
+
+                const p1PaddleFront = PADDLE_WIDTH * 1.5;
+                if (ballSpeedX < 0 && ballX > p1PaddleFront && Math.abs(ballSpeedX) > 0) {
+                    const timeToImpact = (ballX - p1PaddleFront) / (-ballSpeedX / 1000); // ms
+                    p1InTimingWindow = timeToImpact > 0 && timeToImpact < (POWER_CURVE_TIMING_OFFSET + POWER_CURVE_TIMING_WINDOW);
+                    
+                    const showFlash = timeToImpact > 0 && timeToImpact < POWER_CURVE_TIMING_OFFSET;
+                    p1ChargeBarInner.classList.toggle('perfect-charge', showFlash);
+                } else {
+                    p1InTimingWindow = false;
+                    p1ChargeBarInner.classList.remove('perfect-charge');
+                }
+            }
+            
+            // --- Player 2 Charging Logic ---
+            if (gameMode === 'multiplayer') {
+                const p2PowerInput = keysPressed['arrowright'] || p2MobileControl.power;
+                const p2CurveInput = keysPressed['arrowleft'] || p2MobileControl.curve;
+                const p2ChargingInput = p2PowerInput && p2CurveInput;
+
+                if (p2ChargingInput && !p2IsCharging) { // Start charging
+                    p2IsCharging = true;
+                    p2ChargeStartTime = now;
+                    p2PrimedCharge = 0;
+                    if (bgMusicEnabled && !p1IsCharging) { chargeSound.currentTime = 0; chargeSound.play().catch(e=>{}); }
+                }
+
+                if (p2IsCharging) {
+                    p2ChargeLevel = Math.min(1, (now - p2ChargeStartTime) / POWER_CURVE_MAX_CHARGE_TIME);
+                    updateChargeBar(2, p2ChargeLevel);
+                    
+                    const p2PaddleFront = canvas.width - PADDLE_WIDTH * 1.5;
+                    if (ballSpeedX > 0 && ballX < p2PaddleFront && Math.abs(ballSpeedX) > 0) {
+                        const timeToImpact = ((p2PaddleFront - ballX) / (ballSpeedX / 1000)); // ms
+                        p2InTimingWindow = timeToImpact > 0 && timeToImpact < (POWER_CURVE_TIMING_OFFSET + POWER_CURVE_TIMING_WINDOW);
+                    
+                        const showFlash = timeToImpact > 0 && timeToImpact < POWER_CURVE_TIMING_OFFSET;
+                        p2ChargeBarInner.classList.toggle('perfect-charge', showFlash);
+                    } else {
+                        p2InTimingWindow = false;
+                        p2ChargeBarInner.classList.remove('perfect-charge');
+                    }
+                }
+            }
+        }
+
+        function updateSpeedDisplay() {
+            const speedMagnitude = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+            const kmh = 5 + Math.round(speedMagnitude * 0.6); // Adjusted multiplier for new speed
+            speedDisplay.textContent = `${kmh} KM/H`;
+
+            let color = '#4ade80'; // Green
+            if (kmh > 125) { // Demonic
+                color = '#eeb3e8';
+            } else if (kmh > 100) { // Very Hard
+                color = '#fca5a5';
+            } else if (kmh > 75) { // Hard
+                color = '#fb923c';
+            } else if (kmh > 50) { // Medium
+                color = '#fcd34d';
+            } else if (kmh > 25) { // Easy
+                color = '#a5f3fc';
+            }
+            speedDisplay.style.color = color;
+        }
+
+        function update(dt) {
+            if (!gameRunning || isPaused || (isWaitingToServe && gameMode !== 'training')) return;
+            const dtSeconds = dt / 1000;
+            
+            handlePowerCurveCharge();
+
+            const isSinglePlayer = gameMode !== 'multiplayer';
+            const p1Up = keysPressed['w'] || (isSinglePlayer && keysPressed['arrowup']) || p1MobileControl.up;
+            const p1Down = keysPressed['s'] || (isSinglePlayer && keysPressed['arrowdown']) || p1MobileControl.down;
+            
+            if (!p1IsCharging) {
+                if (p1Up) player1Y -= player1KeyPaddleSpeed * dtSeconds;
+                if (p1Down) player1Y += player1KeyPaddleSpeed * dtSeconds;
+                player1Y = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, player1Y));
+            }
+
+            if (gameMode === 'multiplayer') {
+                const p2Up = keysPressed['arrowup'] || p2MobileControl.up;
+                const p2Down = keysPressed['arrowdown'] || p2MobileControl.down;
+                if (!p2IsCharging) {
+                    if (p2Up) player2Y -= player2KeyPaddleSpeed * dtSeconds;
+                    if (p2Down) player2Y += player2KeyPaddleSpeed * dtSeconds;
+                    player2Y = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, player2Y));
+                }
+            } else if (gameMode === 'ai') {
+                aiLogic(dtSeconds);
+            }
+            
+            oldBallX = ballX; oldBallY = ballY;
+
+            if (ballCurveMagnitude !== 0) {
+                ballSpeedY += ballCurveMagnitude * dtSeconds;
+                ballCurveMagnitude *= Math.pow(0.98, dt / (1000 / 60)); // Framerate independent decay
+                if (Math.abs(ballCurveMagnitude) < 1) ballCurveMagnitude = 0;
+            }
+
+            ballX += ballSpeedX * dtSeconds; 
+            ballY += ballSpeedY * dtSeconds;
+            updateSpeedDisplay();
+
+            if (ballTrailEnabled) {
+                const trailLength = lastSpecialShotType ? 25 : 8; // Shorter trail for normal hits
+                ballTrail.push({x: oldBallX, y: oldBallY});
+                if (ballTrail.length > trailLength) ballTrail.shift();
+            }
+            
+            if (ballY - BALL_RADIUS < 0 || ballY + BALL_RADIUS > canvas.height) {
+                ballY = (ballY - BALL_RADIUS < 0) ? BALL_RADIUS : canvas.height - BALL_RADIUS;
+                ballSpeedY *= -1; 
+                wallHitSound();
+                ballCurveMagnitude *= -1; 
+            }
+            
+            checkPaddleCollision(PADDLE_WIDTH * 0.5, player1Y, true);
+
+            if (gameMode !== 'training') {
+                checkPaddleCollision(canvas.width - PADDLE_WIDTH * 1.5, player2Y, false);
+                if (ballX - BALL_RADIUS > canvas.width || ballX + BALL_RADIUS < 0) {
+                    handleMiss();
+                }
+            } else {
+                if (ballX + BALL_RADIUS > canvas.width) {
+                    ballX = canvas.width - BALL_RADIUS; ballSpeedX *= -1; wallHitSound(); 
+                    if (trainingSubType === 'beginner') { objectiveProgress++; updateObjectiveDisplay(); }
+                }
+                if (ballX + BALL_RADIUS < 0) {
+                    handleMiss();
+                }
+            }
+        }
+        
+        function triggerScreenEffect(className, duration) {
+            if (vfxIntensity === 0) return;
+            gameContainer.classList.add(className);
+            setTimeout(() => gameContainer.classList.remove(className), duration);
+        }
+
+        function triggerPowerShotFX() {
+            powerShotImpactSound(); playUiSound(powerShotWooshSound);
+            powerShotText.classList.add('show');
+            setTimeout(() => powerShotText.classList.remove('show'), 1000);
+            triggerScreenEffect('screen-shake', 150);
+            createParticles(ballX, ballY, 22, 'fire');
+            lastSpecialShotType = 'fire';
+            ballCurveMagnitude = 0;
+        }
+        
+        function triggerCurveShotFX() {
+            playUiSound(curveShotSound);
+            curveShotText.classList.add('show');
+            setTimeout(() => curveShotText.classList.remove('show'), 1000);
+            triggerScreenEffect('screen-swerve', 200);
+            createParticles(ballX, ballY, 22, 'ice');
+            lastSpecialShotType = 'ice';
+        }
+
+        function triggerPowerCurveShotFX() {
+            playUiSound(powerCurveShotSound);
+            playSound(90, 0.15, 'square', 0.4);
+            powerCurveShotText.classList.add('show');
+            setTimeout(() => powerCurveShotText.classList.remove('show'), 1000);
+            triggerScreenEffect('power-curve-impact', 250);
+            createParticles(ballX, ballY, 52, 'power-curve');
+            lastSpecialShotType = 'power-curve';
+        }
+
+        function triggerDraftFX(player) {
+            playUiSound(draftSound);
+            draftText.classList.add('show');
+            setTimeout(() => draftText.classList.remove('show'), 1000);
+            const particleX = player.isPlayer1 ? player.x + PADDLE_WIDTH : player.x;
+            const particleY = player.y + PADDLE_HEIGHT / 2;
+            createParticles(particleX, particleY, 30, 'draft');
+            lastSpecialShotType = 'draft';
+        }
+
+        function checkPaddleCollision(paddleX, paddleY, isPlayer1) {
+            const paddleHalfWidth = PADDLE_WIDTH / 2;
+            const paddleHalfHeight = PADDLE_HEIGHT / 2;
+            const paddleCenterX = paddleX + paddleHalfWidth;
+            const paddleCenterY = paddleY + paddleHalfHeight;
+
+            // Find closest point on paddle to ball
+            const closestX = Math.max(paddleX, Math.min(ballX, paddleX + PADDLE_WIDTH));
+            const closestY = Math.max(paddleY, Math.min(ballY, paddleY + PADDLE_HEIGHT));
+
+            const distanceX = ballX - closestX;
+            const distanceY = ballY - closestY;
+            const distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+            if (distanceSquared > (BALL_RADIUS * BALL_RADIUS)) {
+                return; // No collision
+            }
+            
+            const isFrontalHit = Math.abs(ballX - paddleCenterX) > Math.abs(oldBallX - paddleCenterX);
+            const isTopOrBottomHit = (closestY === paddleY && ballSpeedY > 0) || (closestY === paddleY + PADDLE_HEIGHT && ballSpeedY < 0);
+            
+            if (isTopOrBottomHit && !isFrontalHit) { // Top or bottom edge collision
+                ballY = closestY === paddleY ? (paddleY - BALL_RADIUS) : (paddleY + PADDLE_HEIGHT + BALL_RADIUS);
+                ballSpeedY *= -1;
+                paddleHitSound();
+            } else { // Frontal or corner collision
+                handleFrontalCollision(paddleX, paddleY, isPlayer1);
+            }
+        }
+
+        function handleFrontalCollision(paddleX, paddleY, isPlayer1) {
+            // Eject ball from paddle
+            ballX = isPlayer1 ? (paddleX + PADDLE_WIDTH + BALL_RADIUS) : (paddleX - BALL_RADIUS);
+            
+            const speedMagnitude = Math.sqrt(ballSpeedX*ballSpeedX + ballSpeedY*ballSpeedY);
+            ballSpeedX = (isPlayer1 ? 1 : -1) * speedMagnitude;
+
+            const paddleCenterY = paddleY + PADDLE_HEIGHT / 2;
+            let deltaY = ballY - paddleCenterY;
+            const ySpeedFactor = 0.5 * canvas.height;
+            ballSpeedY = (deltaY / PADDLE_HEIGHT) * ySpeedFactor * 2;
+        
+            currentRally++;
+            if(rallyDisplay) {
+                rallyDisplay.textContent = currentRally;
+                rallyDisplay.classList.remove('pop');
+                void rallyDisplay.offsetWidth;
+                rallyDisplay.classList.add('pop');
+                if(currentRally > 0) rallyDisplay.classList.remove('hidden');
+            }
+            if (gameMode === 'training' && trainingSubType === 'free') updateScoreDisplay();
+
+            if (gameMode === 'training' && ['advanced', 'expert', 'master'].includes(trainingSubType)) objectiveProgress = currentRally;
+            updateObjectiveDisplay();
+
+            let powerShotActive = false;
+            let curveShotActive = false;
+            let primedCharge = 0;
+            const isSinglePlayer = gameMode !== 'multiplayer';
+
+            if (isPlayer1) {
+                powerShotActive = (keysPressed['d'] || (isSinglePlayer && keysPressed['arrowright']) || p1MobileControl.power);
+                curveShotActive = (keysPressed['a'] || (isSinglePlayer && keysPressed['arrowleft']) || p1MobileControl.curve);
+                primedCharge = p1PrimedCharge;
+            } else if (gameMode === 'multiplayer') {
+                powerShotActive = (keysPressed['arrowright'] || p2MobileControl.power);
+                curveShotActive = (keysPressed['arrowleft'] || p2MobileControl.curve);
+                primedCharge = p2PrimedCharge;
+            } else { // AI
+                powerShotActive = aiWantsPower;
+                curveShotActive = aiWantsCurve;
+                if (aiWantsPower && aiWantsCurve) primedCharge = Math.random() * 0.5 + 0.5; // AI has variable charge
+            }
+            
+            if(Math.random() < DRAFT_CHANCE) {
+                ballSpeedX *= DRAFT_SPEED_BOOST;
+                triggerDraftFX({ isPlayer1: isPlayer1, x: paddleX, y: paddleY });
+            } else if (primedCharge > 0.1) {
+                powerShotChain++; curveShotChain++;
+                const chargeEffect = 0.4 + (primedCharge * 0.6); 
+                ballSpeedX *= (POWER_CURVE_SPEED_MULTIPLIER + (powerShotChain * POWER_SHOT_CHAIN_BONUS)) * chargeEffect;
+                const curveForce = 1.2 * canvas.height;
+                ballCurveMagnitude = (-deltaY / PADDLE_HEIGHT) * (isPlayer1 ? 1 : -1) * (POWER_CURVE_CURVE_MULTIPLIER + (curveShotChain * CURVE_SHOT_CHAIN_BONUS)) * chargeEffect * curveForce;
+                triggerPowerCurveShotFX();
+                if (isPlayer1) p1PrimedCharge = 0; else p2PrimedCharge = 0;
+                if (isPlayer1 && gameMode === 'training') advancedCoursePowerHits++;
+            }
+            else if (powerShotActive && !curveShotActive) { 
+                powerShotChain++; curveShotChain = 0;
+                ballSpeedX *= (POWER_SHOT_MULTIPLIER + (powerShotChain * POWER_SHOT_CHAIN_BONUS));
+                triggerPowerShotFX();
+                if (isPlayer1 && gameMode === 'training') advancedCoursePowerHits++;
+            } else if (curveShotActive && !powerShotActive) { 
+                curveShotChain++; powerShotChain = 0;
+                ballSpeedX *= (CURVE_SHOT_SPEED_MULTIPLIER + (curveShotChain * CURVE_SHOT_CHAIN_BONUS * 0.02));
+                const curveForce = 1.0 * canvas.height;
+                ballCurveMagnitude = (-deltaY / PADDLE_HEIGHT) * (isPlayer1 ? 1 : -1) * (CURVE_MAGNITUDE_MULTIPLIER + (curveShotChain * CURVE_SHOT_CHAIN_BONUS)) * curveForce;
+                triggerCurveShotFX();
+                if (isPlayer1 && gameMode === 'training') advancedCoursePowerHits++;
+            } else {
+                powerShotChain = 0; curveShotChain = 0; paddleHitSound();
+                lastSpecialShotType = null;
+                ballSpeedX *= 1.05; // Base speed increase
+                const curveForce = 0.1 * canvas.height;
+                ballCurveMagnitude = (-deltaY / PADDLE_HEIGHT) * (isPlayer1 ? 1 : -1) * curveForce;
+            }
+
+            if (!isPlayer1) { aiWantsPower = false; aiWantsCurve = false; }
+            if (isPlayer1 && gameMode === 'training') updateObjectiveDisplay();
+        }
+
+        function aiLogic(dtSeconds) {
+            aiWantsPower = false; aiWantsCurve = false; 
+            const aiCenter = player2Y + PADDLE_HEIGHT / 2;
+            const settings = { 
+                veryeasy: { pred: 0.25, zone: 2.0, power: 0.01, edge: 0.1 }, 
+                easy:     { pred: 0.40, zone: 2.5, power: 0.05, edge: 0.15 }, 
+                medium:   { pred: 0.60, zone: 3.0, power: 0.15, edge: 0.3 }, 
+                hard:     { pred: 0.85, zone: 4.0, power: 0.50, edge: 0.2 }, 
+                veryhard: { pred: 0.92, zone: 5.0, power: 0.70, edge: 0.3 }, 
+                demonic:  { pred: 0.995, zone: 7.0, power: 0.90, edge: 0.05 }
+            }[aiDifficulty];
+            
+            if (ballSpeedX > 0 && ballX > canvas.width / settings.zone) {
+                const timeToImpact = ((canvas.width - PADDLE_WIDTH * 1.5) - ballX) / ballSpeedX;
+                let predictedY = ballY + ballSpeedY * timeToImpact * settings.pred;
+
+                let targetY = predictedY;
+                if (Math.random() < settings.edge && ballX > canvas.width * 0.7) {
+                     const edgeOffset = PADDLE_HEIGHT * (0.35 + Math.random() * 0.1); 
+                     targetY += (Math.random() > 0.5) ? -edgeOffset : edgeOffset;
+                }
+
+                const diff = targetY - aiCenter;
+                const moveSpeed = aiPaddleSpeed * 1.2 * dtSeconds;
+                player2Y += Math.sign(diff) * Math.min(Math.abs(diff), moveSpeed);
+                
+                const ballIsHittable = Math.abs(predictedY - aiCenter) < PADDLE_HEIGHT * 0.8;
+                if (ballIsHittable && Math.random() < settings.power) {
+                    const canPowerCurve = aiDifficulty === 'hard' || aiDifficulty === 'veryhard' || aiDifficulty === 'demonic';
+                    const powerCurveChance = { hard: 0.1, veryhard: 0.2, demonic: 0.4 }[aiDifficulty] || 0;
+                    
+                    if (canPowerCurve && Math.random() < powerCurveChance) {
+                        aiWantsPower = true; aiWantsCurve = true;
+                    } else if (aiDifficulty !== 'veryeasy' && aiDifficulty !== 'easy' && Math.random() > 0.4) {
+                        aiWantsCurve = true;
+                    } else {
+                        aiWantsPower = true;
+                    }
+                }
+            } else if (ballSpeedX < 0) {
+                const centerDiff = (canvas.height / 2) - aiCenter;
+                if (Math.abs(centerDiff) > PADDLE_HEIGHT * 0.1) player2Y += Math.sign(centerDiff) * aiPaddleSpeed * 0.3 * dtSeconds;
+            }
+            player2Y = Math.max(0, Math.min(canvas.height - PADDLE_HEIGHT, player2Y));
+        }
+
+        function checkTrainingObjective() {
+            if (gameMode !== 'training' || trainingSubType === 'free' || !gameRunning || courseObjectiveMet) return;
+            const objectives = {
+                beginner: { progress: objectiveProgress, required: 5 },
+                medium:   { progress: advancedCoursePowerHits, required: 3 },
+                advanced: { progress: objectiveProgress, required: 10, p_hits: advancedCoursePowerHits, p_req: 1 },
+                expert:   { progress: objectiveProgress, required: 20 },
+                master:   { progress: objectiveProgress, required: 50, p_hits: advancedCoursePowerHits, p_req: 10 }
+            };
+            const obj = objectives[trainingSubType];
+            if (obj && obj.progress >= obj.required && (!obj.p_req || obj.p_hits >= obj.p_req)) {
+                courseObjectiveMet = true; 
+                objectiveDisplay.innerHTML = 'OBJECTIVE COMPLETE!';
+                objectiveDisplay.style.color = 'var(--winning-green)';
+                objectiveDisplay.style.textShadow = '0 0 10px var(--winning-green)';
+                playUiSound(newHighScoreSound);
+                setTimeout(() => { if (gameRunning) endGame('Course Complete!'); }, 1500);
+            }
+        }
+        
+        function updateFPS(now) {
+            frameCount++;
+            if (now - lastFpsUpdate > 1000) {
+                const currentFps = frameCount;
+                fpsDisplay.textContent = `${currentFps} FPS`;
+                if (currentFps > 55) {
+                    fpsDisplay.style.color = '#4ade80'; // green
+                } else if (currentFps > 30) {
+                    fpsDisplay.style.color = '#facc15'; // yellow
+                } else {
+                    fpsDisplay.style.color = '#ef4444'; // red
+                }
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+        }
+
+        function gameLoop(timestamp) { 
+            deltaTime = timestamp - lastTime;
+            if(deltaTime > 100) deltaTime = 16.67; // Clamp to avoid physics bugs on tab change
+            lastTime = timestamp;
+
+            if (showFPS) updateFPS(timestamp);
+            update(deltaTime); 
+            checkTrainingObjective();
+            draw(); 
+            if (gameRunning) animationFrameId = requestAnimationFrame(gameLoop); 
+        }
+
+        function checkWin() {
+            if (gameMode === 'training' && trainingSubType !== 'free') {
+                if (player2Score >= 1) { courseObjectiveMet = false; endGame(`Course Failed!`); return true; }
+            } else if (gameMode === 'ai' || gameMode === 'multiplayer') {
+                if (player1Score >= selectedWinningScore) { endGame(`${p1DisplayName} Wins!`); return true; } 
+                else if (player2Score >= selectedWinningScore) { endGame(`${p2DisplayName} Wins!`); return true; } 
+            }
+            return false; 
+        }
+        
+        function updateScoreDisplay() {
+            if (gameMode === 'ai' || gameMode === 'multiplayer') {
+                const p1ScoreEl = scoreDisplay.querySelector('.p1-score'), p2ScoreEl = scoreDisplay.querySelector('.p2-score');
+                if(!p1ScoreEl || !p2ScoreEl) return;
+                p1ScoreEl.textContent = player1Score; p2ScoreEl.textContent = player2Score;
+                p1ScoreEl.classList.toggle('winning-score', player1Score >= selectedWinningScore || (player1Score > player2Score && player1Score > 0));
+                p2ScoreEl.classList.toggle('winning-score', player2Score >= selectedWinningScore || (player2Score > player1Score && player2Score > 0));
+            } else if (trainingSubType === 'free') {
+                scoreDisplay.innerHTML = `Rally: ${currentRally}<span class="score-target">To Beat: ${trainingHighScore}</span>`;
+            }
+        }
+        
+        function updateObjectiveDisplay() {
+            if (gameMode !== 'training' || trainingSubType === 'free' || !objectiveDisplay || courseObjectiveMet) return;
+            let text = '';
+            switch(trainingSubType) {
+                case 'beginner': text = `Hit wall bounces: ${objectiveProgress} / 5`; break;
+                case 'medium': text = `Land Special Shots: ${advancedCoursePowerHits} / 3`; break;
+                case 'advanced': text = `Rally: ${objectiveProgress}/10 | Specials: ${advancedCoursePowerHits}/1`; break;
+                case 'expert': text = `Achieve a rally of: ${objectiveProgress} / 20`; break;
+                case 'master': text = `Rally: ${objectiveProgress}/50 | Specials: ${advancedCoursePowerHits}/10`; break;
+            }
+            objectiveDisplay.innerHTML = text;
+        }
+
+        function updateAllHighScoreDisplays() {
+            trainingHighScore = parseInt(localStorage.getItem('pingPongTrainingHighScore')) || 0;
+            vsAiRallyHighScore = parseInt(localStorage.getItem('pingPongVsAiRallyHighScore')) || 0;
+            multiplayerRallyHighScore = parseInt(localStorage.getItem('pingPongMultiplayerRallyHighScore')) || 0;
+            
+            if(trainingHighScoreDisplay) trainingHighScoreDisplay.textContent = trainingHighScore;
+            if(vsAiHighScoreDisplay) vsAiHighScoreDisplay.textContent = vsAiRallyHighScore;
+            if(multiplayerRallyHighScore) multiplayerRallyHighScore.textContent = multiplayerRallyHighScore;
+        }
+
+        async function startCountdown() {
+            messageOverlay.classList.remove('visible'); 
+            const cdOverlay = document.createElement('div');
+            cdOverlay.style.cssText = `position: absolute; top:0; left:0; width: 100%; height: 100%; display:flex; justify-content:center; align-items:center; background:none; z-index:11;`;
+            gameContainer.appendChild(cdOverlay);
+
+            const cdText = document.createElement('div');
+            cdText.id = 'countdownText';
+            cdOverlay.appendChild(cdText);
+            
+            let count = 3; const countdownColors = ['#EF4444', '#FBBF24', '#22c55e'];
+            for (let i = 0; i < 3; i++) {
+                cdText.textContent = count;
+                const color = countdownColors[i];
+                cdText.style.color = color; cdText.style.textShadow = `0 0 20px ${color}, 0 0 30px ${color}`;
+                cdText.classList.remove('pop'); void cdText.offsetWidth; cdText.classList.add('pop');
+                playSound(440, 0.2, 'sine', 0.4);
+                await new Promise(res => setTimeout(res, 1000));
+                count--;
+            }
+
+            cdText.textContent = 'GO!'; cdText.style.color = '#FFFFFF';
+            cdText.style.textShadow = '0 0 20px #3B82F6, 0 0 40px #3B82F6';
+            cdText.classList.remove('pop'); void cdText.offsetWidth; cdText.classList.add('pop');
+            goBeep();
+            await new Promise(res => setTimeout(res, 1000));
+            cdOverlay.remove(); 
+            actualStartGame(); 
+        }
+
+        function actualStartGame() {
+            isWaitingToServe = false;
+            keysPressed = {}; p1MobileControl = { up: false, down: false, power: false, curve: false }; p2MobileControl = { up: false, down: false, power: false, curve: false };
+            gameRunning = true; isPaused = false;
+            lastTime = performance.now(); // Initialize lastTime
+            showScreen('game');
+            if (bgMusicEnabled && bgMusic.paused) bgMusic.play().catch(e => { });
+            gameLoop(lastTime);
+        }
+
+        function prepareGame() {
+            if (!gameMode) return;
+            pauseButton.innerHTML = "❚❚"; 
+            if (!audioCtx) playSound(1, 0, 'sine', 0);
+            setTheme();
+            resizeCanvas();
+            resetGameElements();
+            showScreen('game');
+            draw();
+            scoreDisplay.classList.add('hidden');
+            objectiveDisplay.classList.add('hidden');
+            p1DisplayName = "Player 1";
+            if (gameMode === 'ai' || gameMode === 'multiplayer') {
+                const opponentName = gameMode === 'ai' ? `AI (${aiDifficulty.replace('very','V. ').replace(/^\w/,c=>c.toUpperCase())})` : "Player 2";
+                p2DisplayName = opponentName;
+                scoreDisplay.innerHTML = `<span class="score-value p1-score">0</span> - <span class="score-value p2-score">0</span><span class="opponent-name">vs. ${opponentName}</span><span class="score-target">(First to ${selectedWinningScore})</span>`;
+                scoreDisplay.classList.remove('hidden');
+            } else if (gameMode === 'training') {
+                if (trainingSubType === 'free') {
+                     scoreDisplay.classList.remove('hidden');
+                     updateScoreDisplay(); // Initialize with current rally and high score
+                } else {
+                     objectiveDisplay.classList.remove('hidden'); updateObjectiveDisplay();
+                }
+            }
+            let preGameMessage = ' ';
+            if (gameMode === 'training' && trainingSubType !== 'free') {
+                let objectiveText = '';
+                switch(trainingSubType) {
+                    case 'beginner': objectiveText = 'Hit the ball against the right wall 5 times.'; break;
+                    case 'medium': objectiveText = 'Successfully perform 3 Special Shots.'; break;
+                    case 'advanced': objectiveText = 'Achieve a 10-hit rally AND perform 1 Special Shot.'; break;
+                    case 'expert': objectiveText = 'Achieve a 20-hit rally.'; break;
+                    case 'master': objectiveText = 'Achieve a 50-hit rally AND perform 10 Special Shots.'; break;
+                }
+                preGameMessage = `<div style="font-size: 1.8rem; margin-bottom: 0.5rem;">Objective:</div><p style="font-size: 1.2rem; color: var(--text-med);">${objectiveText}</p><p style="font-size: 1rem; color: var(--text-med); margin-top: 1rem;">Don't let the ball get past you!</p>`;
+            }
+            messageText.innerHTML = preGameMessage;
+            
+            const startButtonColor = getComputedStyle(startGameButton).background;
+            messageButtons.innerHTML = `<button id="readyButton" class="button" style="padding: 1.25rem 4rem; font-size: 1.75rem; background: ${startButtonColor};">I'M READY!</button>`;
+            
+            messageOverlay.classList.remove('new-highscore-glow');
+            messageOverlay.classList.add('visible');
+            document.getElementById('readyButton').addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('readyButton')); startCountdown(); }, { once: true });
+        }
+
+        function showStandardEndScreen(message, subMessage = '') {
+            showScreen('game'); 
+            messageOverlay.classList.add('visible');
+            messageText.innerHTML = `<div style="font-size: 2.5rem; margin-bottom: 1rem;">${message}</div>` + subMessage;
+            messageButtons.innerHTML = `<button id="restartButton" class="button button-play-again">Play Again</button><button id="backToHomeButton" class="button button-home">Back to Home</button>`;
+            
+            document.getElementById('restartButton')?.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('restartButton')); prepareGame(); }, { once: true });
+            document.getElementById('backToHomeButton')?.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('backToHomeButton')); goHome(); }, { once: true });
+        }
+        
+        function endGame(message) {
+            if (!gameRunning) return; 
+            gameRunning = false; cancelAnimationFrame(animationFrameId); bgMusic.pause(); bgMusic.currentTime = 0;
+            chargeSound.pause();
+            
+            let subMessage = '';
+            messageOverlay.classList.remove('celebrate', 'new-highscore-glow');
+            confettiContainer.innerHTML = '';
+            let newHighScore = false;
+            let playWinSound = false;
+
+            // --- Course / Difficulty Completion Logic ---
+            if (gameMode === 'training' && trainingSubType !== 'free') {
+                if (courseObjectiveMet && !trainingCoursesCompleted.includes(trainingSubType)) {
+                    trainingCoursesCompleted.push(trainingSubType);
+                    localStorage.setItem('pingPongCompletedCourses', JSON.stringify(trainingCoursesCompleted));
+                    playWinSound = true; // Mark as a special win
+                    message = "Course Passed!";
+                }
+                if (maxRallyThisMatch > 0) {
+                    subMessage = `<div class="highscore-info" style="margin-top: 1rem;">Highest Rally This Match: ${maxRallyThisMatch}</div>`;
+                }
+            } else if (gameMode === 'ai' && player1Score >= selectedWinningScore) {
+                 if (!aiDifficultiesCompleted.includes(aiDifficulty)) {
+                    aiDifficultiesCompleted.push(aiDifficulty);
+                    localStorage.setItem('pingPongCompletedAIs', JSON.stringify(aiDifficultiesCompleted));
+                 }
+            }
+
+            // --- High Score Logic (Rally) ---
+            if (gameMode === 'training' && trainingSubType === 'free') {
+                subMessage = `<div class="highscore-info">Your rally: ${currentRally}<br>High score: ${trainingHighScore}</div>`;
+                if (currentRally > trainingHighScore) {
+                    trainingHighScore = currentRally;
+                    localStorage.setItem('pingPongTrainingHighScore', trainingHighScore);
+                    newHighScore = true;
+                    message = "NEW HIGH SCORE!";
+                    subMessage = `<div class="highscore-info" style="color:var(--accent-yellow); font-size:1.5rem;">${trainingHighScore}</div>`;
+                }
+            } else if (gameMode === 'ai') {
+                subMessage = `<div class="highscore-info">Highest Rally: ${maxRallyThisMatch}<br>Overall Best: ${vsAiRallyHighScore}</div>`;
+                if (maxRallyThisMatch > vsAiRallyHighScore) {
+                    vsAiRallyHighScore = maxRallyThisMatch;
+                    localStorage.setItem('pingPongVsAiRallyHighScore', vsAiRallyHighScore);
+                    newHighScore = true;
+                    if(message.includes("Wins!")) { // Don't overwrite win message
+                        subMessage += `<br><span style="color:var(--accent-yellow); font-size:1.1rem; display: block; margin-top: 0.5rem;">New Rally Record: ${vsAiRallyHighScore} hits!</span>`;
+                    } else {
+                        message = "NEW RALLY HIGH SCORE!";
+                        subMessage = `<div class="highscore-info" style="color:var(--accent-yellow); font-size:1.5rem;">${vsAiRallyHighScore} hits!</div>`;
+                    }
+                }
+            } else if (gameMode === 'multiplayer') {
+                subMessage = `<div class="highscore-info">Highest Rally: ${maxRallyThisMatch}<br>Overall Best: ${multiplayerRallyHighScore}</div>`;
+                if (maxRallyThisMatch > multiplayerRallyHighScore) {
+                    multiplayerRallyHighScore = maxRallyThisMatch;
+                    localStorage.setItem('pingPongMultiplayerRallyHighScore', multiplayerRallyHighScore);
+                    newHighScore = true;
+                    if(message.includes("Wins!")) {
+                         subMessage += `<br><span style="color:var(--accent-yellow); font-size:1.1rem; display: block; margin-top: 0.5rem;">New Rally Record: ${multiplayerRallyHighScore} hits!</span>`;
+                    } else {
+                        message = "NEW RALLY HIGH SCORE!";
+                        subMessage = `<div class="highscore-info" style="color:var(--accent-yellow); font-size:1.5rem;">${multiplayerRallyHighScore} hits!</div>`;
+                    }
+                }
+            }
+            
+            if(newHighScore || playWinSound){
+                playUiSound(cheerSound);
+                triggerConfetti(250);
+                messageOverlay.classList.add('new-highscore-glow');
+            } else {
+                playUiSound(newHighScoreSound); // Play regular win/loss sound
+            }
+
+            showStandardEndScreen(message, subMessage);
+        }
+
+        function togglePause() {
+            if (!gameRunning) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                bgMusic.pause(); chargeSound.pause();
+                cancelAnimationFrame(animationFrameId);
+                pauseButton.innerHTML = "►";
+                messageText.innerHTML = `<div id="pauseText">PAUSED</div>`;
+                messageButtons.innerHTML = `
+                    <button id="resumeBtn" class="button button-resume">Resume</button>
+                    <button id="inGameInstructionsBtn" class="button secondary-button" style="font-size: 1.5rem;">Instructions</button>
+                    <button id="inGameExitBtn" class="button button-red">Back to Home</button>
+                    <div class="w-full flex justify-center items-center gap-8 mt-6">
+                        <button id="pauseResetBtn" class="pause-icon-btn" title="Restart Match">⟳</button>
+                        <button id="pauseSettingsBtn" class="pause-icon-btn" title="Settings">⚙️</button>
+                    </div>
+                `;
+                messageOverlay.classList.remove('new-highscore-glow');
+                messageOverlay.classList.add('visible');
+                speedDisplay.classList.add('hidden');
+                
+                document.getElementById('resumeBtn').onclick = () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('resumeBtn')); togglePause(); };
+                document.getElementById('inGameInstructionsBtn').onclick = () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('inGameInstructionsBtn')); showScreen('tutorial_detailed', true); };
+                document.getElementById('inGameExitBtn').onclick = () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('inGameExitBtn')); showScreen('exit_confirm'); };
+                document.getElementById('pauseResetBtn').onclick = () => { playUiSound(uiClickSound); triggerUiShake(document.getElementById('pauseResetBtn')); showScreen('reset_confirm'); };
+                document.getElementById('pauseSettingsBtn').onclick = () => { 
+                    playUiSound(uiClickSound);
+                    triggerUiShake(document.getElementById('pauseSettingsBtn'));
+                    messageOverlay.classList.remove('visible');
+                    showScreen('settings', true);
+                };
+
+            } else {
+                pauseButton.innerHTML = "❚❚";
+                messageOverlay.classList.remove('visible');
+                speedDisplay.classList.remove('hidden');
+                if (bgMusicEnabled && bgMusic.paused) bgMusic.play();
+                lastTime = performance.now(); // Reset delta time on unpause
+                gameLoop(lastTime);
+            }
+        }
+
+        function goHome() {
+            if (gameRunning) { gameRunning = false; cancelAnimationFrame(animationFrameId); }
+            bgMusic.pause(); bgMusic.currentTime = 0; chargeSound.pause(); isPaused = false;
+            playUiSound(uiClickSound);
+            gameMode = null; aiDifficulty = null; trainingSubType = null; selectedWinningScore = null;
+            modeCards.forEach(c => c.classList.remove('selected'));
+            [...difficultyButtons, ...trainingButtons, ...mpScoreButtons, ...aiScoreButtons].forEach(b => b.classList.remove('selected-glow'));
+            speedDisplay.classList.add('hidden');
+            showScreen('home');
+        }
+        
+        function animateGradients() {
+            if (bgAnimationEnabled && extraEffectsEnabled) {
+                gradientAnimationTime += 0.005;
+                const xPos = 50 + Math.sin(gradientAnimationTime * 0.7) * 20;
+                const yPos = 50 + Math.cos(gradientAnimationTime * 1) * 20;
+                docRoot.style.setProperty('--grad-x', `${xPos}%`);
+                docRoot.style.setProperty('--grad-y', `${yPos}%`);
+            }
+            animationLoopId = requestAnimationFrame(animateGradients);
+        }
+        
+        function updateStartButtonAppearance() {
+            startGameButton.style.background = '';
+            const oldDrips = startGameButton.querySelectorAll('.drip');
+            oldDrips.forEach(drip => drip.remove());
+            
+            let selectedButton = null;
+            if (gameMode === 'ai' && aiDifficulty) {
+                selectedButton = document.getElementById(aiDifficulty + 'Button');
+            } else if (gameMode === 'training' && trainingSubType) {
+                selectedButton = document.getElementById('training-' + trainingSubType);
+            } else if (gameMode === 'multiplayer' && selectedWinningScore) {
+                startGameButton.style.background = 'linear-gradient(to right, var(--mp-bg-start), var(--mp-bg-end)), var(--glass-bg)';
+                return;
+            }
+
+            if (selectedButton && !startGameButton.disabled) {
+                startGameButton.style.background = getComputedStyle(selectedButton).background;
+                if (extraEffectsEnabled && selectedButton.querySelectorAll('.drip').length > 0) {
+                    selectedButton.querySelectorAll('.drip').forEach(drip => startGameButton.appendChild(drip.cloneNode()));
+                }
+            } else {
+                startGameButton.style.background = ''; // Resets to default CSS
+            }
+        }
+
+        // === NEW/MODIFIED: Settings Functions ===
+        function updateSfxVolume(newVolume) {
+            sfxVolume = newVolume;
+            chargeSound.volume = sfxVolume * 0.3;
+            draftSound.volume = sfxVolume * 0.5;
+        }
+
+        function applyMusicSetting() {
+            if (bgMusicEnabled && gameRunning && !isPaused) {
+                bgMusic.play().catch(e => {});
+            } else {
+                bgMusic.pause();
+            }
+        }
+
+        function applyFPSToggle() {
+            fpsDisplay.classList.toggle('hidden', !showFPS);
+        }
+        
+        function updateDynamicSlider(slider) {
+            if (!slider) return;
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const val = parseFloat(slider.value);
+            const percentage = ((val - min) / (max - min)) * 100;
+            slider.style.setProperty('--fill-percent', `${percentage}%`);
+        }
+
+        function loadSettings() {
+            sfxVolume = parseFloat(localStorage.getItem('settings_sfxVolume') ?? '1.0');
+            bgMusicEnabled = (localStorage.getItem('settings_bgMusicEnabled') ?? 'true') === 'true';
+            extraEffectsEnabled = (localStorage.getItem('settings_extraEffectsEnabled') ?? 'true') === 'true';
+            bgAnimationEnabled = (localStorage.getItem('settings_bgAnimationEnabled') ?? 'true') === 'true';
+            ballTrailEnabled = (localStorage.getItem('settings_ballTrailEnabled') ?? 'true') === 'true';
+            showFPS = (localStorage.getItem('settings_showFPS') ?? 'true') === 'true';
+            vfxIntensity = parseFloat(localStorage.getItem('settings_vfxIntensity') ?? '0.5');
+            p1PaddleColor = localStorage.getItem('settings_p1PaddleColor') ?? DEFAULT_P1_COLOR;
+            p2PaddleColor = localStorage.getItem('settings_p2PaddleColor') ?? DEFAULT_P2_COLOR;
+            ballColor = localStorage.getItem('settings_ballColor') ?? DEFAULT_BALL_COLOR;
+
+
+            // Apply to UI
+            sfxVolumeSlider.value = sfxVolume;
+            sfxVolumeValue.textContent = `${Math.round(sfxVolume * 100)}%`;
+            musicToggle.checked = bgMusicEnabled;
+            extraEffectsToggle.checked = extraEffectsEnabled;
+            bgAnimationToggle.checked = bgAnimationEnabled;
+            ballTrailToggle.checked = ballTrailEnabled;
+            fpsToggle.checked = showFPS;
+            vfxSlider.value = vfxIntensity;
+            vfxValue.textContent = `${Math.round(vfxIntensity * 100)}%`;
+            p1ColorPicker.value = p1PaddleColor;
+            p2ColorPicker.value = p2PaddleColor;
+            ballColorPicker.value = ballColor;
+            
+            body.classList.toggle('extra-effects-disabled', !extraEffectsEnabled);
+            
+            updateSfxVolume(sfxVolume);
+            applyFPSToggle();
+            document.querySelectorAll('input[type=range].dynamic-fill').forEach(slider => updateDynamicSlider(slider));
+            
+            if (bgAnimationEnabled && !animationLoopId) animateGradients();
+            else if (!bgAnimationEnabled && animationLoopId) cancelAnimationFrame(animationLoopId);
+        }
+        
+        function initializeEventListeners() {
+            [closeTutorialButton, closeTutorialButtonX, closeUpdateLogButton, closeUpdateLogButtonX, closeAiInfoButton, closeAiInfoButtonX].forEach(btn => {
+                btn.addEventListener('click', () => {
+                    playUiSound(uiCloseSound);
+                    triggerUiShake(btn);
+                    btn.closest('.modal-overlay').classList.add('hidden');
+                    if (isPaused) { messageOverlay.classList.add('visible'); }
+                });
+            });
+            instructionsButton.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(instructionsButton); showScreen('tutorial_detailed', true); });
+            updateLogButton.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(updateLogButton); showScreen('update_log', true); });
+            aiInfoButton.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(aiInfoButton); showScreen('ai_info', true); });
+            
+            const openSettings = (btn) => {
+                playUiSound(uiClickSound);
+                triggerUiShake(btn);
+                if (gameRunning && !isPaused) { togglePause(); }
+                if (isPaused) { messageOverlay.classList.remove('visible'); }
+                showScreen('settings', true);
+            };
+            const closeSettings = (btn) => {
+                 playUiSound(uiCloseSound);
+                 triggerUiShake(btn);
+                 settingsModal.classList.add('hidden');
+                 if (isPaused) { messageOverlay.classList.add('visible'); }
+                 if (gameRunning) draw();
+            };
+            settingsButton.addEventListener('click', (e) => openSettings(e.currentTarget));
+            inGameSettingsButton.addEventListener('click', (e) => openSettings(e.currentTarget));
+            closeSettingsButton.addEventListener('click', (e) => closeSettings(e.currentTarget));
+            closeSettingsButtonX.addEventListener('click', (e) => closeSettings(e.currentTarget));
+
+            sfxVolumeSlider.addEventListener('input', (e) => {
+                const newVolume = parseFloat(e.target.value);
+                updateSfxVolume(newVolume);
+                sfxVolumeValue.textContent = `${Math.round(newVolume * 100)}%`;
+                updateDynamicSlider(e.target);
+            });
+            sfxVolumeSlider.addEventListener('change', (e) => {
+                 localStorage.setItem('settings_sfxVolume', e.target.value);
+                 playUiSound(uiClickSound);
+            });
+
+            musicToggle.addEventListener('change', (e) => {
+                playUiSound(uiClickSound);
+                bgMusicEnabled = e.target.checked;
+                applyMusicSetting();
+                localStorage.setItem('settings_bgMusicEnabled', bgMusicEnabled);
+            });
+            extraEffectsToggle.addEventListener('change', (e) => {
+                playUiSound(uiClickSound);
+                extraEffectsEnabled = e.target.checked;
+                body.classList.toggle('extra-effects-disabled', !extraEffectsEnabled);
+                localStorage.setItem('settings_extraEffectsEnabled', extraEffectsEnabled);
+                if (gameRunning || currentScreen === 'home') draw();
+            });
+            bgAnimationToggle.addEventListener('change', e => {
+                playUiSound(uiClickSound);
+                bgAnimationEnabled = e.target.checked;
+                localStorage.setItem('settings_bgAnimationEnabled', bgAnimationEnabled);
+                if(bgAnimationEnabled && !animationLoopId) animateGradients();
+                if(!bgAnimationEnabled && animationLoopId) { cancelAnimationFrame(animationLoopId); animationLoopId = null; }
+            });
+            ballTrailToggle.addEventListener('change', e => {
+                playUiSound(uiClickSound);
+                ballTrailEnabled = e.target.checked;
+                localStorage.setItem('settings_ballTrailEnabled', ballTrailEnabled);
+                if(!ballTrailEnabled) ballTrail = [];
+            });
+            fpsToggle.addEventListener('change', (e) => {
+                playUiSound(uiClickSound);
+                showFPS = e.target.checked;
+                applyFPSToggle();
+                localStorage.setItem('settings_showFPS', showFPS);
+            });
+
+            vfxSlider.addEventListener('input', (e) => {
+                vfxIntensity = parseFloat(e.target.value);
+                vfxValue.textContent = `${Math.round(vfxIntensity * 100)}%`;
+                updateDynamicSlider(e.target);
+            });
+            vfxSlider.addEventListener('change', (e) => {
+                const snapThreshold = 0.05;
+                const value = parseFloat(e.target.value);
+                if (Math.abs(value - 0.5) < snapThreshold) { // Snap to 50%
+                    e.target.value = 0.5;
+                    e.target.dispatchEvent(new Event('input', { bubbles: true }));
+                } else if (Math.abs(value - 1.0) < snapThreshold) { // Snap to 100%
+                    e.target.value = 1.0;
+                    e.target.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                localStorage.setItem('settings_vfxIntensity', e.target.value);
+                playUiSound(uiClickSound);
+            });
+            
+            p1ColorPicker.addEventListener('change', () => playUiSound(uiClickSound));
+            p1ColorPicker.addEventListener('input', (e) => {
+                p1PaddleColor = e.target.value;
+                localStorage.setItem('settings_p1PaddleColor', p1PaddleColor);
+                setTheme();
+                if(gameRunning) draw();
+            });
+            p1ColorReset.addEventListener('click', () => {
+                playUiSound(uiClickSound); triggerUiShake(p1ColorReset);
+                p1ColorPicker.value = DEFAULT_P1_COLOR;
+                p1ColorPicker.dispatchEvent(new Event('input'));
+            });
+            
+            p2ColorPicker.addEventListener('change', () => playUiSound(uiClickSound));
+            p2ColorPicker.addEventListener('input', (e) => {
+                p2PaddleColor = e.target.value;
+                localStorage.setItem('settings_p2PaddleColor', p2PaddleColor);
+                setTheme();
+                if(gameRunning) draw();
+            });
+             p2ColorReset.addEventListener('click', () => {
+                playUiSound(uiClickSound); triggerUiShake(p2ColorReset);
+                p2ColorPicker.value = DEFAULT_P2_COLOR;
+                p2ColorPicker.dispatchEvent(new Event('input'));
+            });
+            
+            ballColorPicker.addEventListener('change', () => playUiSound(uiClickSound));
+            ballColorPicker.addEventListener('input', (e) => {
+                ballColor = e.target.value;
+                localStorage.setItem('settings_ballColor', ballColor);
+                setTheme();
+                if(gameRunning) draw();
+            });
+            ballColorReset.addEventListener('click', () => {
+                playUiSound(uiClickSound); triggerUiShake(ballColorReset);
+                ballColorPicker.value = DEFAULT_BALL_COLOR;
+                ballColorPicker.dispatchEvent(new Event('input'));
+            });
+            
+            confirmExitBtn.addEventListener('click', () => { triggerUiShake(confirmExitBtn); goHome(); });
+            cancelExitBtn.addEventListener('click', () => { playUiSound(uiCloseSound); triggerUiShake(cancelExitBtn); exitConfirmModal.classList.add('hidden'); if(isPaused) messageOverlay.classList.add('visible'); });
+            confirmResetBtn.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(confirmResetBtn); resetConfirmModal.classList.add('hidden'); if(isPaused) togglePause(); prepareGame(); });
+            cancelResetBtn.addEventListener('click', () => { playUiSound(uiCloseSound); triggerUiShake(cancelResetBtn); resetConfirmModal.classList.add('hidden'); if(isPaused) messageOverlay.classList.add('visible'); });
+            tutorialYesButton.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(tutorialYesButton); tutorialPromptModal.classList.add('hidden'); showScreen('tutorial_detailed', true); });
+            tutorialNoButton.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(tutorialNoButton); tutorialPromptModal.classList.add('hidden'); goHome(true); });
+
+            inGameExitButton.addEventListener('click', (e) => { triggerUiShake(e.currentTarget); if (gameRunning && !isPaused) { togglePause(); } showScreen('exit_confirm'); });
+            resetGameButton.addEventListener('click', (e) => { triggerUiShake(e.currentTarget); if(gameRunning && !isPaused) { togglePause(); } showScreen('reset_confirm'); });
+            pauseButton.addEventListener('click', (e) => { triggerUiShake(e.currentTarget); togglePause(); });
+            
+            function selectMode(mode, button) { 
+                playUiSound(uiClickSound);
+                triggerUiShake(button);
+                gameMode = mode; 
+                aiDifficulty = null; 
+                trainingSubType = null; 
+                selectedWinningScore = null;
+                if (mode === 'multiplayer') {
+                    selectedWinningScore = parseInt(customScoreSlider.value);
+                }
+
+                modeCards.forEach(c => c.classList.remove('selected'));
+                button.classList.add('selected'); 
+                [...difficultyButtons, ...trainingButtons, ...mpScoreButtons, ...aiScoreButtons].forEach(b => b.classList.remove('selected-glow'));
+                
+                showScreen('home'); 
+            }
+
+            vsAiButton.addEventListener('click', (e) => selectMode('ai', e.currentTarget));
+            trainingButton.addEventListener('click', (e) => selectMode('training', e.currentTarget));
+            multiplayerButton.addEventListener('click', (e) => selectMode('multiplayer', e.currentTarget));
+            
+            difficultyButtons.forEach(button => button.addEventListener('click', () => { 
+                if (gameMode !== 'ai') return; 
+                playUiSound(uiClickSound);
+                triggerUiShake(button);
+                aiDifficulty = button.id.replace('Button', ''); 
+                difficultyButtons.forEach(btn => btn.classList.remove('selected-glow')); 
+                button.classList.add('selected-glow'); 
+                showScreen('home'); 
+            }));
+
+            aiScoreButtons.forEach(button => button.addEventListener('click', (e) => {
+                if (gameMode !== 'ai') return;
+                playUiSound(uiClickSound);
+                triggerUiShake(button);
+                selectedWinningScore = parseInt(e.target.dataset.score);
+                aiScoreButtons.forEach(btn => btn.classList.remove('selected-glow'));
+                button.classList.add('selected-glow');
+                showScreen('home');
+            }));
+            
+            trainingButtons.forEach(button => button.addEventListener('click', () => {
+                if (gameMode !== 'training') return; 
+                playUiSound(uiClickSound);
+                triggerUiShake(button);
+                trainingSubType = button.id.split('-')[1]; 
+                trainingButtons.forEach(btn => btn.classList.remove('selected-glow')); 
+                button.classList.add('selected-glow'); 
+                showScreen('home');
+            }));
+
+            mpScoreButtons.forEach(button => button.addEventListener('click', (e) => {
+                if (gameMode !== 'multiplayer') return; 
+                playUiSound(uiClickSound);
+                triggerUiShake(button);
+                const score = parseInt(e.target.dataset.score); 
+                selectedWinningScore = score; 
+                customScoreSlider.value = score; 
+                customScoreValue.textContent = score;
+                mpScoreButtons.forEach(btn => btn.classList.toggle('selected-glow', btn.dataset.score == score));
+                updateDynamicSlider(customScoreSlider);
+                showScreen('home');
+            }));
+            
+            customScoreSlider.addEventListener('input', (e) => {
+                if (gameMode !== 'multiplayer') return; 
+                const score = parseInt(e.target.value); 
+                selectedWinningScore = score; 
+                customScoreValue.textContent = score;
+                mpScoreButtons.forEach(btn => btn.classList.toggle('selected-glow', btn.dataset.score == score));
+                updateDynamicSlider(customScoreSlider); 
+                showScreen('home');
+            });
+            customScoreSlider.addEventListener('change', (e) => { playUiSound(uiClickSound); });
+
+            startGameButton.addEventListener('click', () => { playUiSound(uiClickSound); triggerUiShake(startGameButton); prepareGame(); });
+            
+            window.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                if (['w', 's', 'a', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'p', ' '].includes(key)) e.preventDefault();
+                keysPressed[key] = true; 
+                if (key === 'p' && gameRunning) togglePause();
+            });
+            window.addEventListener('keyup', (e) => {
+                const key = e.key.toLowerCase();
+                const wasPressed = keysPressed[key];
+                keysPressed[key] = false;
+
+                if (!wasPressed) return;
+                
+                const isSinglePlayer = gameMode !== 'multiplayer';
+                if (p1IsCharging && (key === 'a' || key === 'd' || (isSinglePlayer && (key === 'arrowleft' || key === 'arrowright')))) {
+                     if (p1InTimingWindow) p1PrimedCharge = p1ChargeLevel; else p1PrimedCharge = 0;
+                     p1IsCharging = false; p1ChargeBarInner.classList.remove('perfect-charge');
+                     if(!p2IsCharging) chargeSound.pause(); updateChargeBar(1,0);
+                }
+                if (gameMode === 'multiplayer' && p2IsCharging && (key === 'arrowleft' || key === 'arrowright')) {
+                     if (p2InTimingWindow) p2PrimedCharge = p2ChargeLevel; else p2PrimedCharge = 0;
+                     p2IsCharging = false; p2ChargeBarInner.classList.remove('perfect-charge');
+                     if(!p1IsCharging) chargeSound.pause(); updateChargeBar(2,0);
+                }
+            });
+            
+            function setupMobileButton(button, controlObj, property) {
+                const setControl = (state) => {
+                    if (!isPaused && gameRunning) controlObj[property] = state; else controlObj[property] = false;
+                };
+                button.addEventListener('touchstart', (e) => { e.preventDefault(); setControl(true); }, {passive: false});
+                button.addEventListener('touchend', (e) => { e.preventDefault(); setControl(false); keyupHandler(controlObj, property); }, {passive: false});
+                button.addEventListener('touchcancel', (e) => { e.preventDefault(); setControl(false); keyupHandler(controlObj, property); }, {passive: false});
+            }
+            
+            function keyupHandler(control, prop) {
+                const isSinglePlayer = gameMode !== 'multiplayer';
+                if(p1IsCharging && control === p1MobileControl && (prop === 'power' || prop === 'curve')) {
+                    if (p1InTimingWindow) p1PrimedCharge = p1ChargeLevel; else p1PrimedCharge = 0;
+                    p1IsCharging = false; p1ChargeBarInner.classList.remove('perfect-charge');
+                    if(!p2IsCharging) chargeSound.pause(); updateChargeBar(1,0);
+                }
+                if(p2IsCharging && control === p2MobileControl && (prop === 'power' || prop === 'curve')) {
+                    if (p2InTimingWindow) p2PrimedCharge = p2ChargeLevel; else p2PrimedCharge = 0;
+                    p2IsCharging = false; p2ChargeBarInner.classList.remove('perfect-charge');
+                    if(!p1IsCharging) chargeSound.pause(); updateChargeBar(2,0);
+                }
+            }
+            
+            setupMobileButton(mobileUpBtnP1, p1MobileControl, 'up'); 
+            setupMobileButton(mobileDownBtnP1, p1MobileControl, 'down');
+            setupMobileButton(mobilePowerBtnP1, p1MobileControl, 'power');
+            setupMobileButton(mobileCurveBtnP1, p1MobileControl, 'curve');
+            setupMobileButton(mobileUpBtnP2, p2MobileControl, 'up');
+            setupMobileButton(mobileDownBtnP2, p2MobileControl, 'down');
+            setupMobileButton(mobilePowerBtnP2, p2MobileControl, 'power');
+            setupMobileButton(mobileCurveBtnP2, p2MobileControl, 'curve');
+            
+            let canPlayHoverSound = true;
+            document.querySelectorAll('button, .button, .card').forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    if(canPlayHoverSound && !el.disabled) {
+                        playUiSound(uiHoverSound); canPlayHoverSound = false;
+                        setTimeout(() => { canPlayHoverSound = true; }, 50);
+                    }
+                });
+            });
+        }
+
+        function initializeGame() {
+            loadSettings();
+            trainingCoursesCompleted = JSON.parse(localStorage.getItem('pingPongCompletedCourses')) || [];
+            aiDifficultiesCompleted = JSON.parse(localStorage.getItem('pingPongCompletedAIs')) || [];
+            updateAllHighScoreDisplays();
+            updateCompletedChecks();
+            setTheme();
+            resizeCanvas();
+            if (!localStorage.getItem('pingPongVisited')) {
+                 showScreen('tutorial_prompt');
+                 localStorage.setItem('pingPongVisited', 'true');
+            } else {
+                 goHome(true);
+            }
+            initializeEventListeners();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        initializeGame();
+    </script>
+</body>
+</html>

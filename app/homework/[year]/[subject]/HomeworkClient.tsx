@@ -106,6 +106,9 @@ export default function HomeworkClient({ year, subject, yearDisplay, subjectDisp
                   </span>
                 </div>
                 
+                                {hw.imageUrl && (
+                  <img src={hw.imageUrl} alt={hw.title} className="mb-3 w-full max-h-64 object-cover rounded" />
+                )}
                 <p className="text-gray-600 mb-3">
                   {hw.description}
                 </p>

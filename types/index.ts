@@ -21,6 +21,7 @@ export interface Homework {
   createdAt: string; // YYYY-MM-DD format
   updatedAt: string; // YYYY-MM-DD format
   createdBy: string; // admin user ID
+  imageUrl?: string; // optional image for display
 }
 
 export interface UserHomework {

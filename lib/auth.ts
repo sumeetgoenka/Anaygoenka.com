@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { UserRole } from '@/types';
 
 export const authOptions: NextAuthOptions = {
@@ -9,13 +10,38 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID || 'dummy-client-id',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy-client-secret',
     }),
+    CredentialsProvider({
+      name: 'Admin Credentials',
+      credentials: {
+        username: { label: 'Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        const username = credentials?.username || '';
+        const password = credentials?.password || '';
+        if (username === 'coolestanay' && password === 'happy123') {
+          return {
+            id: 'admin-user',
+            name: 'Admin',
+            email: 'admin@example.com',
+            role: 'admin' as UserRole,
+          } as any;
+        }
+        return null;
+      },
+    }),
   ],
   callbacks: {
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      if (user) {
+        (token as any).role = (user as any).role || 'user';
+      }
+      return token;
+    },
+    async session({ session, token }) {
       if (session?.user) {
-        session.user.id = user.id || 'dummy-id';
-        // Set default role as 'user' for new users
-        session.user.role = (user as any).role || 'user';
+        session.user.id = (token?.sub as string) || session.user.id || 'dummy-id';
+        session.user.role = ((token as any)?.role as UserRole) || 'user';
       }
       return session;
     },

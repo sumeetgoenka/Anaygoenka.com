@@ -1,7 +1,19 @@
 import Link from 'next/link';
 import { Bot, MessageCircle, Brain, BookOpen, Calculator, Palette } from 'lucide-react';
 
-export default function AIAssistantsPage() {
+async function fetchDynamicAssistants() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/admin/assistants`, { cache: 'no-store' });
+    if (!res.ok) return [] as Array<{ id: string; title: string; description: string; url: string }>;
+    const data = await res.json();
+    return (data.assistants || []) as Array<{ id: string; title: string; description: string; url: string }>;
+  } catch {
+    return [] as Array<{ id: string; title: string; description: string; url: string }>;
+  }
+}
+
+export default async function AIAssistantsPage() {
+  const dynamic = await fetchDynamicAssistants();
   const assistants = [
     {
       id: 'homework-helper',
@@ -72,6 +84,25 @@ export default function AIAssistantsPage() {
           Intelligent AI-powered tools to help with your learning and productivity
         </p>
       </div>
+
+      {/* Newly Added Assistants */}
+      {dynamic.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Bot className="h-6 w-6 text-primary-600" />
+            Newly Added
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dynamic.map((a) => (
+              <div key={a.id} className="card group hover:shadow-lg transition-all duration-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{a.title}</h3>
+                <p className="text-gray-600 mb-4">{a.description}</p>
+                <Link href={a.url} className="btn-primary text-sm px-4 py-2">Open</Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Featured Assistants */}
       <section>

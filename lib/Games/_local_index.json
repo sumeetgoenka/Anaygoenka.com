@@ -1,0 +1,12 @@
+{
+  "ping-pong-masters": {
+    "id": "ping-pong-masters",
+    "slug": "ping-pong-masters",
+    "title": "Ping pong masters",
+    "description": "Coded by the founders themselves!",
+    "htmlPath": "/Users/anaygoenka/Documents/Anaygoenka.com/lib/Games/ping-pong-masters.html",
+    "createdAt": 1754734115444,
+    "updatedAt": 1754734115444,
+    "createdBy": "admin@example.com"
+  }
+}

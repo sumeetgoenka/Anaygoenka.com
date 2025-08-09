@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AnayGoenka.com - Upgraded
 
 An upgraded version of AnayGoenka.com featuring homework management, interactive games, AI assistants, and comprehensive user management.
@@ -216,3 +217,6 @@ For support, email support@anaygoenka.com or create an issue in the repository.
 - **Anay Goenka** - Founder & Lead Developer
 - **Noah Lee** - Co-Founder & Designer  
 - **James Efstathiou** - Co-Founder & Content Manager 
+=======
+# Anaygoenka.com
+>>>>>>> 320ef0acd232e47d2c0675a2da03817f8924c48f

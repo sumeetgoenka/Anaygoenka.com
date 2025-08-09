@@ -1,230 +1,146 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { 
-  Users, 
-  BookOpen, 
-  CheckCircle, 
-  TrendingUp, 
-  Plus, 
-  Settings,
-  BarChart3,
-  Calendar
-} from 'lucide-react';
-import { DashboardStats } from '@/types';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    totalHomework: 0,
-    completedHomework: 0,
-    activeUsers: 0,
-  });
-  const [loading, setLoading] = useState(true);
+
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+  const [code, setCode] = useState('');
+  const [savingGame, setSavingGame] = useState(false);
+  const [gameMsg, setGameMsg] = useState<string | null>(null);
+
+  const [hwTitle, setHwTitle] = useState('');
+  const [hwSubject, setHwSubject] = useState('');
+  const [hwYear, setHwYear] = useState('');
+  const [hwDue, setHwDue] = useState('');
+  const [hwDesc, setHwDesc] = useState('');
+  const [hwImage, setHwImage] = useState('');
+  const [savingHw, setSavingHw] = useState(false);
+  const [hwMsg, setHwMsg] = useState<string | null>(null);
+
+  const [aiTitle, setAiTitle] = useState('');
+  const [aiSlug, setAiSlug] = useState('');
+  const [aiDesc, setAiDesc] = useState('');
+  const [aiEmbed, setAiEmbed] = useState('');
+  const [savingAI, setSavingAI] = useState(false);
+  const [aiMsg, setAiMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
-    
     if (!session?.user || session.user.role !== 'admin') {
       router.push('/');
-      return;
     }
-
-    fetchStats();
   }, [session, status, router]);
 
-  const fetchStats = async () => {
+  const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9\-\s]/g, '').replace(/\s+/g, '-').slice(0, 80) || 'item';
+
+  async function addGame() {
+    setGameMsg(null);
+    if (!name || !desc || !code) { setGameMsg('Name, description, and code required'); return; }
+    setSavingGame(true);
     try {
-      const response = await fetch('/api/admin/stats');
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+      const slug = slugify(name);
+      const res = await fetch('/api/admin/games', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, title: name, description: desc, html: code }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setGameMsg(`Saved. View at /games/${slug}`);
+      setName(''); setDesc(''); setCode('');
+    } catch (e: any) {
+      setGameMsg(e?.message || 'Failed to save');
+    } finally { setSavingGame(false); }
+  }
+
+  async function addHomework() {
+    setHwMsg(null);
+    if (!hwTitle || !hwSubject || !hwYear || !hwDue) { setHwMsg('Title, Subject, Year, Due Date required'); return; }
+    setSavingHw(true);
+    try {
+      const res = await fetch('/api/admin/homework', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: hwTitle, subject: hwSubject, yearGroup: hwYear, dueDate: hwDue, description: hwDesc, isLive: true, imageUrl: hwImage || undefined })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setHwMsg('Homework saved');
+      setHwTitle(''); setHwSubject(''); setHwYear(''); setHwDue(''); setHwDesc(''); setHwImage('');
+    } catch (e: any) {
+      setHwMsg(e?.message || 'Failed to save');
+    } finally { setSavingHw(false); }
+  }
+
+  async function addAssistant() {
+    setAiMsg(null);
+    if (!aiTitle || !aiDesc || !aiEmbed) { setAiMsg('Title, description and embed required'); return; }
+    setSavingAI(true);
+    try {
+      const slug = slugify(aiSlug || aiTitle);
+      const res = await fetch('/api/admin/assistants', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, title: aiTitle, description: aiDesc, embedHtml: aiEmbed })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setAiMsg(`Assistant saved. View at /ai-assistants/${slug}`);
+      setAiTitle(''); setAiDesc(''); setAiEmbed(''); setAiSlug('');
+    } catch (e: any) {
+      setAiMsg(e?.message || 'Failed to save');
     } finally {
-      setLoading(false);
+      setSavingAI(false);
     }
-  };
-
-  const quickActions = [
-    {
-      title: 'Add Homework',
-      description: 'Create new homework assignments',
-      icon: Plus,
-      href: '/admin/homework/new',
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Manage Users',
-      description: 'View and manage user accounts',
-      icon: Users,
-      href: '/admin/users',
-      color: 'bg-green-500'
-    },
-    {
-      title: 'View Analytics',
-      description: 'Detailed platform analytics',
-      icon: BarChart3,
-      href: '/admin/analytics',
-      color: 'bg-purple-500'
-    },
-    {
-      title: 'Site Settings',
-      description: 'Configure platform settings',
-      icon: Settings,
-      href: '/admin/settings',
-      color: 'bg-orange-500'
-    }
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
   }
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Welcome back, {session?.user?.name}. Here's an overview of your platform.
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">Admin</h1>
+        <p className="text-gray-600 mt-2">Quickly add games, homework, and AI assistants. You can browse the site normally from here.</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid md:grid-cols-3 gap-8">
         <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <BookOpen className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Homework</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalHomework}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.completedHomework}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-orange-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action) => (
-            <a
-              key={action.title}
-              href={action.href}
-              className="card hover:shadow-lg transition-shadow duration-200 group"
-            >
-              <div className="flex items-center">
-                <div className={`p-3 rounded-lg ${action.color} text-white`}>
-                  <action.icon className="h-6 w-6" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                    {action.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {action.description}
-                  </p>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Homework</h3>
+          <h2 className="text-xl font-semibold mb-3">Add a new game</h2>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Math Assignment</p>
-                <p className="text-sm text-gray-600">Year 10 • Due in 2 days</p>
-              </div>
-              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                Live
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">English Essay</p>
-                <p className="text-sm text-gray-600">Year 11 • Due in 5 days</p>
-              </div>
-              <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                Draft
-              </span>
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Game name" value={name} onChange={(e)=>setName(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Short description" value={desc} onChange={(e)=>setDesc(e.target.value)} />
+            <textarea className="border rounded p-2 w-full min-h-[220px] font-mono text-black placeholder-gray-500" placeholder="Paste full HTML (with inline CSS/JS)" value={code} onChange={(e)=>setCode(e.target.value)} />
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50" onClick={addGame} disabled={savingGame}>{savingGame ? 'Saving...' : 'Save game'}</button>
+              {gameMsg && <p className="text-sm text-gray-700">{gameMsg}</p>}
             </div>
           </div>
         </div>
 
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Users</h3>
-          <div className="space-y-3">
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-primary-600">JD</span>
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">John Doe</p>
-                <p className="text-sm text-gray-600">Joined 2 hours ago</p>
-              </div>
+          <h2 className="text-xl font-semibold mb-3">Add homework</h2>
+          <div className="grid gap-3">
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Title" value={hwTitle} onChange={(e)=>setHwTitle(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Subject" value={hwSubject} onChange={(e)=>setHwSubject(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Year Group (e.g., Year 10)" value={hwYear} onChange={(e)=>setHwYear(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" type="date" placeholder="Due date" value={hwDue} onChange={(e)=>setHwDue(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Image URL (optional)" value={hwImage} onChange={(e)=>setHwImage(e.target.value)} />
+            <textarea className="border rounded p-2 w-full min-h-[120px] text-black placeholder-gray-500" placeholder="Description (optional)" value={hwDesc} onChange={(e)=>setHwDesc(e.target.value)} />
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded bg-green-600 text-white disabled:opacity-50" onClick={addHomework} disabled={savingHw}>{savingHw ? 'Saving...' : 'Save homework'}</button>
+              {hwMsg && <p className="text-sm text-gray-700">{hwMsg}</p>}
             </div>
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-green-600">JS</span>
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">Jane Smith</p>
-                <p className="text-sm text-gray-600">Joined 1 day ago</p>
-              </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="text-xl font-semibold mb-3">Add AI Assistant</h2>
+          <div className="grid gap-3">
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Assistant title" value={aiTitle} onChange={(e)=>setAiTitle(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Slug (optional)" value={aiSlug} onChange={(e)=>setAiSlug(e.target.value)} />
+            <input className="border rounded p-2 w-full text-black placeholder-gray-500" placeholder="Short description" value={aiDesc} onChange={(e)=>setAiDesc(e.target.value)} />
+            <textarea className="border rounded p-2 w-full min-h-[220px] font-mono text-black placeholder-gray-500" placeholder="Paste embed HTML (iframe/script)" value={aiEmbed} onChange={(e)=>setAiEmbed(e.target.value)} />
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded bg-purple-600 text-white disabled:opacity-50" onClick={addAssistant} disabled={savingAI}>{savingAI ? 'Saving...' : 'Save assistant'}</button>
+              {aiMsg && <p className="text-sm text-gray-700">{aiMsg}</p>}
             </div>
           </div>
         </div>

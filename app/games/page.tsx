@@ -1,8 +1,30 @@
 import Link from 'next/link';
 import { Gamepad2, Play, Star } from 'lucide-react';
 
-export default function GamesPage() {
-  const games = [
+import { firestoreAdmin } from '@/lib/server/firebaseAdmin';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import GameAdminActions from '@/components/games/GameAdminActions';
+import AdminAddGame from '@/components/games/AdminAddGame';
+
+async function fetchDynamicGames() {
+  try {
+    const snapshot = await firestoreAdmin.collection('games').orderBy('createdAt', 'desc').get();
+    const items = snapshot.docs.map((d: any) => {
+      const data = d.data();
+      return { id: data.id, title: data.title, description: data.description, url: `/games/${data.slug}`, isDynamic: true };
+    });
+    return items as Array<{ id: string; title: string; description: string; url: string; isDynamic?: boolean }>;
+  } catch {
+    return [] as Array<{ id: string; title: string; description: string; url: string; isDynamic?: boolean }>;
+  }
+}
+
+export default async function GamesPage() {
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === 'admin';
+  const dynamicGames = await fetchDynamicGames();
+  const staticGames = [
     {
       id: 'ping-pong',
       title: 'Ping Pong',
@@ -71,6 +93,16 @@ export default function GamesPage() {
     }
   ];
 
+  // Merge dynamic into All Games (dynamic first), remove the "Newly Added" section
+  // Filter out statics that are hidden
+  const hiddenRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/admin/games/hidden`, { cache: 'no-store' }).then(r => r.ok ? r.json() : { ids: [] as string[] }).catch(() => ({ ids: [] as string[] }));
+  const hiddenIds: string[] = hiddenRes.ids || [];
+
+  const allGames = [
+    ...dynamicGames.map(g => ({ id: g.id, title: g.title, description: g.description, gameUrl: g.url, isDynamic: true })),
+    ...staticGames.filter(s => !hiddenIds.includes(s.id))
+  ];
+
   const categories = ['All', 'Arcade', 'Platformer', 'Puzzle', 'Educational'];
   const difficulties = ['All', 'Easy', 'Medium', 'Hard', 'Variable'];
 
@@ -86,6 +118,10 @@ export default function GamesPage() {
         </p>
       </div>
 
+      {isAdmin && (
+        <AdminAddGame />
+      )}
+
       {/* Featured Games */}
       <section>
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -93,7 +129,7 @@ export default function GamesPage() {
           Featured Games
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
-          {games.filter(game => game.featured).map((game) => (
+          {staticGames.filter(game => game.featured).map((game) => (
             <div key={game.id} className="card group hover:shadow-lg transition-all duration-200">
               <div className="aspect-video bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
                 <Gamepad2 className="h-12 w-12 text-gray-400" />
@@ -134,7 +170,7 @@ export default function GamesPage() {
           All Games
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map((game) => (
+          {allGames.map((game) => (
             <div key={game.id} className="card group hover:shadow-lg transition-all duration-200">
               <div className="aspect-video bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
                 <Gamepad2 className="h-12 w-12 text-gray-400" />
@@ -144,25 +180,22 @@ export default function GamesPage() {
                   <h3 className="text-lg font-semibold text-gray-900">
                     {game.title}
                   </h3>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-                    {game.difficulty}
-                  </span>
                 </div>
                 <p className="text-gray-600 text-sm">
                   {game.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    {game.playCount} plays
-                  </span>
                   <Link
-                    href={game.gameUrl}
+                    href={(game as any).gameUrl || (game as any).url || '#'}
                     className="btn-primary text-sm px-4 py-2 flex items-center gap-2"
                   >
                     <Play className="h-4 w-4" />
                     Play Now
                   </Link>
                 </div>
+                {isAdmin && (
+                  <GameAdminActions id={game.id} initialTitle={game.title} initialDescription={game.description} isStatic={!((game as any).isDynamic)} />
+                )}
               </div>
             </div>
           ))}
